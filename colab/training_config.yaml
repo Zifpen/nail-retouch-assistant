@@ -15,12 +15,12 @@ sample_prompts:
   - professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, glossy nail surface, natural skin texture, realistic hand photo, almond, glitter, nude
   - professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, glossy nail surface, natural skin texture, realistic hand photo, coffin, 3d art, mixed
 training:
-  resolution: 768,768
+  resolution: 512,512
   network_dim: 16
   network_alpha: 16
-  train_batch_size: 2
-  gradient_accumulation_steps: 4
-  max_train_epochs: 24
+  train_batch_size: 1
+  gradient_accumulation_steps: 1
+  max_train_epochs: 12
   learning_rate: 1e-4
   unet_lr: 1e-4
   text_encoder_lr: 5e-5
@@ -28,7 +28,7 @@ training:
   lr_scheduler: cosine
   save_every_n_epochs: 4
   mixed_precision: fp16
-  max_data_loader_n_workers: 2
+  max_data_loader_n_workers: 0
   bucket_reso_steps: 64
-  min_bucket_reso: 512
+  min_bucket_reso: 256
   max_bucket_reso: 1024
