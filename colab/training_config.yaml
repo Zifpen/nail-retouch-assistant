@@ -1,5 +1,5 @@
-project_name: nail-retouch-sdxl-v1
-base_model: stabilityai/stable-diffusion-xl-base-1.0
+project_name: nail-retouch-sd15-v1
+base_model: runwayml/stable-diffusion-v1-5
 project_root: /content/nail-retouch-assistant
 processed_dir: dataset/processed
 train_metadata: train/metadata.jsonl
@@ -9,15 +9,15 @@ kohya_repo: /content/kohya_ss
 prepared_data_dir: /content/workdir/train_data
 output_dir: /content/workdir/outputs
 logging_dir: /content/workdir/logs
-output_name: nail_retouch_sdxl_v1
+output_name: nail_retouch_sd15_v1
 sample_prompts:
   - professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, glossy nail surface, natural skin texture, realistic hand photo, square, french, nude
   - professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, glossy nail surface, natural skin texture, realistic hand photo, almond, glitter, nude
   - professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, glossy nail surface, natural skin texture, realistic hand photo, coffin, 3d art, mixed
 training:
   resolution: 512,512
-  network_dim: 16
-  network_alpha: 16
+  network_dim: 8
+  network_alpha: 8
   train_batch_size: 1
   gradient_accumulation_steps: 1
   max_train_epochs: 12
