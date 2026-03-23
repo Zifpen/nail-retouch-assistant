@@ -1,7 +1,7 @@
 project_name: nail-retouch-sd15-v1
 base_model: runwayml/stable-diffusion-v1-5
 project_root: /content/nail-retouch-assistant
-processed_dir: dataset/processed
+processed_dir: dataset/processed_strict_keep
 train_metadata: train/metadata.jsonl
 val_metadata: val/metadata.jsonl
 colab_workdir: /content/workdir
