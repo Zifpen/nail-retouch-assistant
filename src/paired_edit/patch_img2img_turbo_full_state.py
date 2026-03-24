@@ -136,24 +136,6 @@ def main() -> int:
         "checkpoint save",
     )
 
-    text = replace_pattern_once(
-        text,
-        r'''global_step \+= 1''',
-        '''global_step += 1
-                    if global_step >= args.max_train_steps:
-                        break''',
-        "step break",
-    )
-
-    text = replace_pattern_once(
-        text,
-        r'''accelerator\.log\(logs, step=global_step\)''',
-        '''accelerator.log(logs, step=global_step)
-        if global_step >= args.max_train_steps:
-            break''',
-        "epoch break",
-    )
-
     target.write_text(text, encoding="utf-8")
     print(f"Patched full-state save/resume into {target}")
     return 0
