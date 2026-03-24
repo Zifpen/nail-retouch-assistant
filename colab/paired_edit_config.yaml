@@ -15,6 +15,9 @@ training:
   train_batch_size: 1
   num_training_epochs: 200
   viz_freq: 25
+  checkpointing_steps: 100
+  sync_to_drive_interval_seconds: 120
+  auto_resume_from_drive: true
   mixed_precision: null
   gradient_checkpointing: true
   allow_tf32: true
