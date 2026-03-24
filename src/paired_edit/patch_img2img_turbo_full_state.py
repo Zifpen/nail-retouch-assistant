@@ -3,19 +3,16 @@
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 
 
-def replace_regex_once(text: str, pattern: str, replacement: str, label: str) -> str:
+def replace_once(text: str, needle: str, replacement: str, label: str) -> str:
     if replacement in text:
         return text
-    compiled = re.compile(pattern, re.MULTILINE | re.DOTALL)
-    patched, count = compiled.subn(replacement, text, count=1)
-    if count != 1:
+    if needle not in text:
         raise RuntimeError(f"Could not find expected block for {label}.")
-    return patched
+    return text.replace(needle, replacement, 1)
 
 
 def main() -> int:
@@ -26,10 +23,13 @@ def main() -> int:
     target = Path(sys.argv[1])
     text = target.read_text(encoding="utf-8")
 
-    text = replace_regex_once(
+    text = replace_once(
         text,
-        r'''(?ms)^    if accelerator\.is_main_process:\n        os\.makedirs\(os\.path\.join\(args\.output_dir, "checkpoints"\), exist_ok=True\)\n        os\.makedirs\(os\.path\.join\(args\.output_dir, "eval"\), exist_ok=True\)\n''',
-        '''    if accelerator.is_main_process:
+        """    if accelerator.is_main_process:
+        os.makedirs(os.path.join(args.output_dir, "checkpoints"), exist_ok=True)
+        os.makedirs(os.path.join(args.output_dir, "eval"), exist_ok=True)
+""",
+        """    if accelerator.is_main_process:
         os.makedirs(os.path.join(args.output_dir, "checkpoints"), exist_ok=True)
         os.makedirs(os.path.join(args.output_dir, "eval"), exist_ok=True)
     resume_state = None
@@ -39,14 +39,18 @@ def main() -> int:
         print(f"Resuming pix2pix-turbo full training state from: {resume_state_path}")
         resume_state = torch.load(resume_state_path, map_location="cpu")
         resume_pkl = resume_state.get("model_path", resume_pkl)
-''',
+""",
         "resume state bootstrap",
     )
 
-    text = replace_regex_once(
+    text = replace_once(
         text,
-        r'''(?ms)^    net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc = accelerator\.prepare\(\n        net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc\n    \)\n    net_clip, net_lpips = accelerator\.prepare\(net_clip, net_lpips\)\n''',
-        '''    net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc = accelerator.prepare(
+        """    net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc = accelerator.prepare(
+        net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc
+    )
+    net_clip, net_lpips = accelerator.prepare(net_clip, net_lpips)
+""",
+        """    net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc = accelerator.prepare(
         net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc
     )
     net_clip, net_lpips = accelerator.prepare(net_clip, net_lpips)
@@ -65,39 +69,45 @@ def main() -> int:
             f"Resumed optimizer/scheduler state at "
             f"global_step={global_step}, epoch={starting_epoch}, step_in_epoch={resume_step_in_epoch}"
         )
-''',
+""",
         "optimizer state restore",
     )
 
-    text = replace_regex_once(
+    text = replace_once(
         text,
-        r'''(?m)^    progress_bar = tqdm\(range\(0, args\.max_train_steps\), initial=0, desc="Steps", disable=not accelerator\.is_local_main_process,\)\n''',
-        '''    progress_bar = tqdm(
+        """    progress_bar = tqdm(range(0, args.max_train_steps), initial=0, desc="Steps", disable=not accelerator.is_local_main_process,)
+""",
+        """    progress_bar = tqdm(
         range(0, args.max_train_steps),
         initial=global_step,
         desc="Steps",
         disable=not accelerator.is_local_main_process,
     )
-''',
+""",
         "progress bar init",
     )
 
-    text = replace_regex_once(
+    text = replace_once(
         text,
-        r'''(?ms)^    # start the training loop\n    global_step = 0\n    for epoch in range\(0, args\.num_training_epochs\):\n        for step, batch in enumerate\(dl_train\):\n''',
-        '''    # start the training loop
+        """    # start the training loop
+    global_step = 0
+    for epoch in range(0, args.num_training_epochs):
+        for step, batch in enumerate(dl_train):
+""",
+        """    # start the training loop
     for epoch in range(starting_epoch, args.num_training_epochs):
         for step, batch in enumerate(dl_train):
             if epoch == starting_epoch and step <= resume_step_in_epoch:
                 continue
-''',
+""",
         "training loop resume",
     )
 
-    text = replace_regex_once(
-        text,
-        r'''(?ms)^ {28}if global_step % args\.checkpointing_steps == 1:\n {32}outf = os\.path\.join\(args\.output_dir, "checkpoints", f"model_\{global_step\}\.pkl"\)\n {32}accelerator\.unwrap_model\(net_pix2pix\)\.save_model\(outf\)\n''',
-        '''                            if global_step % args.checkpointing_steps == 1:
+    checkpoint_needle = """                            if global_step % args.checkpointing_steps == 1:
+                                outf = os.path.join(args.output_dir, "checkpoints", f"model_{global_step}.pkl")
+                                accelerator.unwrap_model(net_pix2pix).save_model(outf)
+"""
+    checkpoint_replacement = """                            if global_step % args.checkpointing_steps == 1:
                                 outf = os.path.join(args.output_dir, "checkpoints", f"model_{global_step}.pkl")
                                 accelerator.unwrap_model(net_pix2pix).save_model(outf)
                                 state_outf = os.path.join(
@@ -118,19 +128,19 @@ def main() -> int:
                                     },
                                     state_outf,
                                 )
-''',
-        "checkpoint save",
-    )
+"""
+    text = replace_once(text, checkpoint_needle, checkpoint_replacement, "checkpoint save")
 
-    text = replace_regex_once(
+    text = replace_once(
         text,
-        r'''(?m)^ {16}accelerator\.log\(logs, step=global_step\)\n''',
-        '''                accelerator.log(logs, step=global_step)
+        """                accelerator.log(logs, step=global_step)
+""",
+        """                accelerator.log(logs, step=global_step)
             if global_step >= args.max_train_steps:
                 break
         if global_step >= args.max_train_steps:
             break
-''',
+""",
         "max_train_steps break",
     )
 
