@@ -1,0 +1,17 @@
+project_name: nail-retouch-paired-v1
+project_root: /content/nail-retouch-assistant
+dataset_dir: dataset/paired_edit_strict_plus
+repo_url: https://github.com/GaParmar/img2img-turbo.git
+repo_dir: /content/img2img-turbo
+drive_dataset_dir: /content/drive/MyDrive/paired_edit_strict_plus
+prepared_workdir: /content/workdir/paired_edit
+output_dir: /content/workdir/paired_edit/output
+drive_output_dir: /content/drive/MyDrive/nail-retouch-paired-outputs
+pretrained_model_name_or_path: stabilityai/sd-turbo
+training:
+  resolution: 512
+  train_batch_size: 1
+  num_training_epochs: 200
+  viz_freq: 25
+  enable_xformers_memory_efficient_attention: true
+  track_val_fid: false
