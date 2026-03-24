@@ -9,7 +9,7 @@ output_dir: /content/workdir/paired_edit/output
 drive_output_dir: /content/drive/MyDrive/nail-retouch-paired-outputs
 pretrained_model_name_or_path: stabilityai/sd-turbo
 training:
-  resolution: 320
+  resolution: 256
   train_batch_size: 1
   num_training_epochs: 200
   viz_freq: 25
