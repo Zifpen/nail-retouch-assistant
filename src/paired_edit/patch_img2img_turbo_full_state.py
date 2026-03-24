@@ -54,6 +54,7 @@ def main() -> int:
         os.makedirs(os.path.join(args.output_dir, "eval"), exist_ok=True)
     resume_state = None
     resume_state_path = os.environ.get("IMG2IMG_TURBO_RESUME_STATE")
+    resume_pkl = os.environ.get("IMG2IMG_TURBO_RESUME_PKL")
     if resume_state_path:
         print(f"Resuming pix2pix-turbo full training state from: {resume_state_path}")
         resume_state = torch.load(resume_state_path, map_location="cpu")
