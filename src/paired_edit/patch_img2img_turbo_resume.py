@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 
-INSERT_SNIPPET = """        resume_pkl = os.environ.get("IMG2IMG_TURBO_RESUME_PKL")
+INSERT_SNIPPET = """        resume_pkl = locals().get("resume_pkl") or os.environ.get("IMG2IMG_TURBO_RESUME_PKL")
         if resume_pkl:
             print(f"Resuming pix2pix-turbo weights from: {resume_pkl}")
             net_pix2pix = Pix2Pix_Turbo(

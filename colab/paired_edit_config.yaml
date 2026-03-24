@@ -14,6 +14,7 @@ training:
   test_image_prep: resize_256
   train_batch_size: 1
   num_training_epochs: 200
+  max_train_steps: 5000
   viz_freq: 25
   checkpointing_steps: 100
   sync_to_drive_interval_seconds: 120
