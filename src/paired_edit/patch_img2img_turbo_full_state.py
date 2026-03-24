@@ -8,12 +8,28 @@ import sys
 from pathlib import Path
 
 
-OUTPUT_DIR_NEEDLE = """    if accelerator.is_main_process:
-        os.makedirs(os.path.join(args.output_dir, "checkpoints"), exist_ok=True)
-        os.makedirs(os.path.join(args.output_dir, "eval"), exist_ok=True)
-"""
+def replace_regex_once(text: str, pattern: str, replacement: str, label: str) -> str:
+    if replacement in text:
+        return text
+    compiled = re.compile(pattern, re.MULTILINE | re.DOTALL)
+    patched, count = compiled.subn(replacement, text, count=1)
+    if count != 1:
+        raise RuntimeError(f"Could not find expected block for {label}.")
+    return patched
 
-OUTPUT_DIR_INSERT = """    if accelerator.is_main_process:
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        print("Usage: patch_img2img_turbo_full_state.py /path/to/train_pix2pix_turbo.py", file=sys.stderr)
+        return 2
+
+    target = Path(sys.argv[1])
+    text = target.read_text(encoding="utf-8")
+
+    text = replace_regex_once(
+        text,
+        r'''(?ms)^    if accelerator\.is_main_process:\n        os\.makedirs\(os\.path\.join\(args\.output_dir, "checkpoints"\), exist_ok=True\)\n        os\.makedirs\(os\.path\.join\(args\.output_dir, "eval"\), exist_ok=True\)\n''',
+        '''    if accelerator.is_main_process:
         os.makedirs(os.path.join(args.output_dir, "checkpoints"), exist_ok=True)
         os.makedirs(os.path.join(args.output_dir, "eval"), exist_ok=True)
     resume_state = None
@@ -23,15 +39,14 @@ OUTPUT_DIR_INSERT = """    if accelerator.is_main_process:
         print(f"Resuming pix2pix-turbo full training state from: {resume_state_path}")
         resume_state = torch.load(resume_state_path, map_location="cpu")
         resume_pkl = resume_state.get("model_path", resume_pkl)
-"""
-
-PREPARE_NEEDLE = """    net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc = accelerator.prepare(
-        net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc
+''',
+        "resume state bootstrap",
     )
-    net_clip, net_lpips = accelerator.prepare(net_clip, net_lpips)
-"""
 
-PREPARE_INSERT = """    net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc = accelerator.prepare(
+    text = replace_regex_once(
+        text,
+        r'''(?ms)^    net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc = accelerator\.prepare\(\n        net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc\n    \)\n    net_clip, net_lpips = accelerator\.prepare\(net_clip, net_lpips\)\n''',
+        '''    net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc = accelerator.prepare(
         net_pix2pix, net_disc, optimizer, optimizer_disc, dl_train, lr_scheduler, lr_scheduler_disc
     )
     net_clip, net_lpips = accelerator.prepare(net_clip, net_lpips)
@@ -50,38 +65,39 @@ PREPARE_INSERT = """    net_pix2pix, net_disc, optimizer, optimizer_disc, dl_tra
             f"Resumed optimizer/scheduler state at "
             f"global_step={global_step}, epoch={starting_epoch}, step_in_epoch={resume_step_in_epoch}"
         )
-"""
+''',
+        "optimizer state restore",
+    )
 
-PROGRESS_NEEDLE = """    progress_bar = tqdm(range(0, args.max_train_steps), initial=0, desc="Steps", disable=not accelerator.is_local_main_process,)
-"""
-
-PROGRESS_INSERT = """    progress_bar = tqdm(
+    text = replace_regex_once(
+        text,
+        r'''(?m)^    progress_bar = tqdm\(range\(0, args\.max_train_steps\), initial=0, desc="Steps", disable=not accelerator\.is_local_main_process,\)\n''',
+        '''    progress_bar = tqdm(
         range(0, args.max_train_steps),
         initial=global_step,
         desc="Steps",
         disable=not accelerator.is_local_main_process,
     )
-"""
+''',
+        "progress bar init",
+    )
 
-LOOP_NEEDLE = """    # start the training loop
-    global_step = 0
-    for epoch in range(0, args.num_training_epochs):
-        for step, batch in enumerate(dl_train):
-"""
-
-LOOP_INSERT = """    # start the training loop
+    text = replace_regex_once(
+        text,
+        r'''(?ms)^    # start the training loop\n    global_step = 0\n    for epoch in range\(0, args\.num_training_epochs\):\n        for step, batch in enumerate\(dl_train\):\n''',
+        '''    # start the training loop
     for epoch in range(starting_epoch, args.num_training_epochs):
         for step, batch in enumerate(dl_train):
             if epoch == starting_epoch and step <= resume_step_in_epoch:
                 continue
-"""
+''',
+        "training loop resume",
+    )
 
-CHECKPOINT_NEEDLE = """                            if global_step % args.checkpointing_steps == 1:
-                                outf = os.path.join(args.output_dir, "checkpoints", f"model_{global_step}.pkl")
-                                accelerator.unwrap_model(net_pix2pix).save_model(outf)
-"""
-
-CHECKPOINT_INSERT = """                            if global_step % args.checkpointing_steps == 1:
+    text = replace_regex_once(
+        text,
+        r'''(?ms)^ {28}if global_step % args\.checkpointing_steps == 1:\n {32}outf = os\.path\.join\(args\.output_dir, "checkpoints", f"model_\{global_step\}\.pkl"\)\n {32}accelerator\.unwrap_model\(net_pix2pix\)\.save_model\(outf\)\n''',
+        '''                            if global_step % args.checkpointing_steps == 1:
                                 outf = os.path.join(args.output_dir, "checkpoints", f"model_{global_step}.pkl")
                                 accelerator.unwrap_model(net_pix2pix).save_model(outf)
                                 state_outf = os.path.join(
@@ -102,41 +118,21 @@ CHECKPOINT_INSERT = """                            if global_step % args.checkpo
                                     },
                                     state_outf,
                                 )
-"""
+''',
+        "checkpoint save",
+    )
 
-BREAK_NEEDLE = """                accelerator.log(logs, step=global_step)
-"""
-
-BREAK_INSERT = """                accelerator.log(logs, step=global_step)
+    text = replace_regex_once(
+        text,
+        r'''(?m)^ {16}accelerator\.log\(logs, step=global_step\)\n''',
+        '''                accelerator.log(logs, step=global_step)
             if global_step >= args.max_train_steps:
                 break
         if global_step >= args.max_train_steps:
             break
-"""
-
-
-def replace_once(text: str, needle: str, replacement: str, label: str) -> str:
-    if replacement in text:
-        return text
-    if needle not in text:
-        raise RuntimeError(f"Could not find expected block for {label}.")
-    return text.replace(needle, replacement, 1)
-
-
-def main() -> int:
-    if len(sys.argv) != 2:
-        print("Usage: patch_img2img_turbo_full_state.py /path/to/train_pix2pix_turbo.py", file=sys.stderr)
-        return 2
-
-    target = Path(sys.argv[1])
-    text = target.read_text(encoding="utf-8")
-
-    text = replace_once(text, OUTPUT_DIR_NEEDLE, OUTPUT_DIR_INSERT, "resume state bootstrap")
-    text = replace_once(text, PREPARE_NEEDLE, PREPARE_INSERT, "optimizer state restore")
-    text = replace_once(text, PROGRESS_NEEDLE, PROGRESS_INSERT, "progress bar init")
-    text = replace_once(text, LOOP_NEEDLE, LOOP_INSERT, "training loop resume")
-    text = replace_once(text, CHECKPOINT_NEEDLE, CHECKPOINT_INSERT, "checkpoint save")
-    text = replace_once(text, BREAK_NEEDLE, BREAK_INSERT, "max_train_steps break")
+''',
+        "max_train_steps break",
+    )
 
     target.write_text(text, encoding="utf-8")
     print(f"Patched full-state save/resume into {target}")
