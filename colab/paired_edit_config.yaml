@@ -13,5 +13,6 @@ training:
   train_batch_size: 1
   num_training_epochs: 200
   viz_freq: 25
+  mixed_precision: fp16
   enable_xformers_memory_efficient_attention: true
   track_val_fid: false
