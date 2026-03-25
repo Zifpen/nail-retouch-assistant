@@ -12,6 +12,7 @@ import shutil
 import sys
 from pathlib import Path
 
+import numpy as np
 import torch
 from PIL import Image, ImageDraw, ImageFont
 
@@ -166,9 +167,12 @@ def load_metadata(metadata_path: Path) -> dict[str, dict]:
 
 def load_image_tensor(path: Path, device: str) -> torch.Tensor:
     image = Image.open(path).convert("RGB")
-    array = torch.tensor(list(image.getdata()), dtype=torch.float32).view(image.height, image.width, 3)
-    tensor = array.permute(2, 0, 1).unsqueeze(0) / 255.0
-    tensor = tensor * 2.0 - 1.0
+    width = image.width - image.width % 8
+    height = image.height - image.height % 8
+    if image.size != (width, height):
+        image = image.resize((width, height), Image.Resampling.LANCZOS)
+    array = np.asarray(image, dtype=np.float32) / 255.0
+    tensor = torch.from_numpy(array).permute(2, 0, 1).unsqueeze(0)
     return tensor.to(device)
 
 
@@ -259,7 +263,9 @@ def main() -> None:
     model = Pix2Pix_Turbo(pretrained_path=str(checkpoint))
     model.set_eval()
 
-    if device == "cpu":
+    if device == "cuda":
+        model.half()
+    elif device == "cpu":
         model = model.to(torch.float32)
 
     for pair_id in pair_ids:
@@ -270,6 +276,8 @@ def main() -> None:
         sheet_path = output_dir / f"{pair_id}_sheet.png"
 
         x_src = load_image_tensor(input_path, device)
+        if device == "cuda":
+            x_src = x_src.half()
         with torch.no_grad():
             x_out = model(x_src, prompt=row["prompt"], deterministic=True)
 
