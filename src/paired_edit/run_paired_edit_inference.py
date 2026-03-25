@@ -6,6 +6,7 @@ Run paired-edit pix2pix-turbo inference on a single image.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import sys
@@ -69,6 +70,17 @@ def parse_args() -> argparse.Namespace:
         choices=["auto", "cpu", "cuda", "mps"],
         help="Runtime device.",
     )
+    parser.add_argument(
+        "--max-side",
+        type=int,
+        default=None,
+        help="Resize the input so its longest side is at most this many pixels before inference.",
+    )
+    parser.add_argument(
+        "--low-vram",
+        action="store_true",
+        help="Apply more aggressive CUDA memory-saving behavior.",
+    )
     return parser.parse_args()
 
 
@@ -120,6 +132,8 @@ def main() -> None:
         raise FileNotFoundError(f"Input image not found: {args.input}")
 
     device = pick_device(args.device)
+    if args.max_side is None and device == "cuda":
+        args.max_side = 1024
     checkpoint = args.checkpoint or latest_checkpoint(args.checkpoint_dir)
     runtime_root = prepare_runtime_upstream(args.upstream_dir, device)
     apply_runtime_checkpoint_patch(runtime_root)
@@ -135,6 +149,16 @@ def main() -> None:
     print(f"Checkpoint: {checkpoint}")
     print(f"Input: {args.input}")
     print(f"Output: {output_path}")
+    if args.max_side is not None:
+        print(f"Max input side: {args.max_side}")
+    if args.low_vram:
+        print("Low-VRAM mode: enabled")
+
+    if device == "cuda":
+        os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        torch.cuda.empty_cache()
 
     model = Pix2Pix_Turbo(pretrained_path=str(checkpoint))
     model.set_eval()
@@ -143,15 +167,28 @@ def main() -> None:
     elif device == "cpu":
         model = model.to(torch.float32)
 
-    x_src = load_image_tensor(args.input, device)
+    if device == "cuda" and args.low_vram:
+        if hasattr(model.vae, "enable_slicing"):
+            model.vae.enable_slicing()
+        if hasattr(model.vae, "enable_tiling"):
+            model.vae.enable_tiling()
+
+    x_src = load_image_tensor(args.input, device, max_side=args.max_side)
     if device == "cuda":
         x_src = x_src.half()
 
-    with torch.no_grad():
+    autocast_context = (
+        torch.autocast(device_type="cuda", dtype=torch.float16)
+        if device == "cuda"
+        else contextlib.nullcontext()
+    )
+    with torch.no_grad(), autocast_context:
         x_out = model(x_src, prompt=args.prompt, deterministic=True)
 
     image = tensor_to_image(x_out)
     image.save(output_path)
+    if device == "cuda":
+        torch.cuda.empty_cache()
 
     metadata = {
         "input": str(args.input),

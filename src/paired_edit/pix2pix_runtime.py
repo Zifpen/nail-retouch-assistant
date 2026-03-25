@@ -92,8 +92,15 @@ def apply_runtime_checkpoint_patch(runtime_root: Path) -> None:
     subprocess.run([sys.executable, str(patch_script), str(target)], check=True)
 
 
-def load_image_tensor(path: Path, device: str) -> torch.Tensor:
+def load_image_tensor(path: Path, device: str, max_side: int | None = None) -> torch.Tensor:
     image = Image.open(path).convert("RGB")
+    if max_side is not None and max(image.size) > max_side:
+        scale = max_side / float(max(image.size))
+        resized = (
+            max(8, int(round(image.width * scale))),
+            max(8, int(round(image.height * scale))),
+        )
+        image = image.resize(resized, Image.Resampling.LANCZOS)
     width = image.width - image.width % 8
     height = image.height - image.height % 8
     if image.size != (width, height):
