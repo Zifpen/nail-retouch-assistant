@@ -104,9 +104,13 @@ def main() -> int:
         r'''# start the training loop\s+global_step = 0\s+for epoch in range\(0, args\.num_training_epochs\):\s+for step, batch in enumerate\(dl_train\):''',
         '''# start the training loop
     for epoch in range(starting_epoch, args.num_training_epochs):
+        if global_step >= args.max_train_steps:
+            break
         for step, batch in enumerate(dl_train):
             if epoch == starting_epoch and step <= resume_step_in_epoch:
-                continue''',
+                continue
+            if global_step >= args.max_train_steps:
+                break''',
         "training loop resume",
     )
 

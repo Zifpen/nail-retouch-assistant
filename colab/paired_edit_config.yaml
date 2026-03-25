@@ -16,7 +16,7 @@ training:
   num_training_epochs: 200
   max_train_steps: 5000
   viz_freq: 25
-  checkpointing_steps: 100
+  checkpointing_steps: 250
   sync_to_drive_interval_seconds: 120
   auto_resume_from_drive: true
   mixed_precision: null
