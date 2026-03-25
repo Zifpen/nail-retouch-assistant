@@ -18,7 +18,7 @@ from PIL import Image, ImageDraw, ImageFont
 DEFAULT_CHECKPOINT_DIR = Path("outputs/checkpoints")
 DEFAULT_DATASET_DIR = Path("dataset/paired_edit_strict_plus")
 DEFAULT_OUTPUT_ROOT = Path("outputs/paired_edit_validation")
-DEFAULT_UPSTREAM_DIR = Path("/tmp/img2img-turbo-local")
+DEFAULT_UPSTREAM_DIR = Path("/content/img2img-turbo")
 DEFAULT_PAIR_IDS = ["pair_0009", "pair_0040", "pair_0047", "pair_0050", "pair_0064"]
 BACKGROUND = (18, 18, 20)
 LABEL_COLOR = (245, 245, 245)
@@ -71,6 +71,12 @@ def parse_args() -> argparse.Namespace:
         help="Runtime device.",
     )
     return parser.parse_args()
+
+
+def resolve_default_path(preferred: Path, fallback: Path) -> Path:
+    if preferred.exists():
+        return preferred
+    return fallback
 
 
 def pick_device(name: str) -> str:
@@ -193,6 +199,19 @@ def build_sheet(input_path: Path, output_path: Path, target_path: Path, sheet_pa
 
 def main() -> None:
     args = parse_args()
+    args.upstream_dir = resolve_default_path(args.upstream_dir, Path("/tmp/img2img-turbo-local"))
+    args.dataset_dir = resolve_default_path(
+        args.dataset_dir,
+        Path("/content/nail-retouch-assistant/dataset/paired_edit_strict_plus"),
+    )
+    args.checkpoint_dir = resolve_default_path(
+        args.checkpoint_dir,
+        Path("/content/drive/MyDrive/nail-retouch-paired-outputs/checkpoints"),
+    )
+    args.output_root = resolve_default_path(
+        args.output_root,
+        Path("/content/workdir/paired_edit/validation"),
+    )
     device = pick_device(args.device)
     checkpoint = args.checkpoint or latest_checkpoint(args.checkpoint_dir)
     pair_ids = args.pair_id or DEFAULT_PAIR_IDS
