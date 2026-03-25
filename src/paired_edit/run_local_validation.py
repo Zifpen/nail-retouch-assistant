@@ -54,6 +54,12 @@ def parse_args() -> argparse.Namespace:
         help="Directory for generated validation outputs.",
     )
     parser.add_argument(
+        "--mirror-output-root",
+        type=Path,
+        default=None,
+        help="Optional second directory that receives a copy of the validation outputs.",
+    )
+    parser.add_argument(
         "--upstream-dir",
         type=Path,
         default=DEFAULT_UPSTREAM_DIR,
@@ -205,6 +211,16 @@ def build_sheet(input_path: Path, output_path: Path, target_path: Path, sheet_pa
     sheet.save(sheet_path)
 
 
+def mirror_output_dir(source_dir: Path, mirror_root: Path | None) -> Path | None:
+    if mirror_root is None:
+        return None
+    mirror_dir = mirror_root / source_dir.name
+    if mirror_dir.exists():
+        shutil.rmtree(mirror_dir)
+    shutil.copytree(source_dir, mirror_dir)
+    return mirror_dir
+
+
 def main() -> None:
     args = parse_args()
     args.upstream_dir = resolve_default_path(args.upstream_dir, Path("/tmp/img2img-turbo-local"))
@@ -220,6 +236,8 @@ def main() -> None:
         args.output_root,
         Path("/content/workdir/paired_edit/validation"),
     )
+    if args.mirror_output_root is None and str(args.output_root).startswith("/content/drive/MyDrive/"):
+        args.mirror_output_root = Path("/content/workdir/paired_edit/validation")
     device = pick_device(args.device)
     checkpoint = args.checkpoint or latest_checkpoint(args.checkpoint_dir)
     pair_ids = args.pair_id or DEFAULT_PAIR_IDS
@@ -269,6 +287,9 @@ def main() -> None:
     }
     (output_dir / "validation_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(f"Saved summary: {output_dir / 'validation_summary.json'}")
+    mirror_dir = mirror_output_dir(output_dir, args.mirror_output_root)
+    if mirror_dir is not None:
+        print(f"Mirrored outputs: {mirror_dir}")
 
 
 if __name__ == "__main__":
