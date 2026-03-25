@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import shutil
 import sys
 from pathlib import Path
@@ -140,6 +141,13 @@ def prepare_runtime_upstream(upstream_dir: Path, device: str) -> Path:
     return runtime_root
 
 
+def apply_runtime_checkpoint_patch(runtime_root: Path) -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    patch_script = repo_root / "src" / "paired_edit" / "patch_img2img_turbo_checkpoint_attrs.py"
+    target = runtime_root / "src" / "pix2pix_turbo.py"
+    subprocess.run([sys.executable, str(patch_script), str(target)], check=True)
+
+
 def load_metadata(metadata_path: Path) -> dict[str, dict]:
     rows: dict[str, dict] = {}
     for line in metadata_path.read_text(encoding="utf-8").splitlines():
@@ -217,6 +225,7 @@ def main() -> None:
     pair_ids = args.pair_id or DEFAULT_PAIR_IDS
 
     runtime_root = prepare_runtime_upstream(args.upstream_dir, device)
+    apply_runtime_checkpoint_patch(runtime_root)
     sys.path.insert(0, str(runtime_root / "src"))
     import os
 
