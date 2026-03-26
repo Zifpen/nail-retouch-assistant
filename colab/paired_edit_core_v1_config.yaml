@@ -13,6 +13,7 @@ training:
   train_image_prep: resize_256
   test_image_prep: resize_256
   train_batch_size: 1
+  learning_rate: 5.0e-6
   num_training_epochs: 120
   max_train_steps: 1500
   viz_freq: 50
@@ -24,3 +25,7 @@ training:
   allow_tf32: true
   enable_xformers_memory_efficient_attention: true
   track_val_fid: false
+  lambda_gan: 0.0
+  lambda_clipsim: 0.0
+  lambda_lpips: 5.0
+  lambda_l2: 1.0
