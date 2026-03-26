@@ -19,7 +19,7 @@ training:
   checkpointing_steps: 100
   sync_to_drive_interval_seconds: 120
   auto_resume_from_drive: true
-  mixed_precision: fp16
+  mixed_precision: "no"
   gradient_checkpointing: true
   allow_tf32: true
   enable_xformers_memory_efficient_attention: true
