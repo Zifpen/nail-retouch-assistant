@@ -1,4 +1,4 @@
-project_name: nail-retouch-paired-core-v1
+project_name: nail-retouch-paired-core-v1-guarded
 project_root: /content/nail-retouch-assistant
 dataset_dir: dataset/paired_edit_core_v1
 repo_url: https://github.com/GaParmar/img2img-turbo.git
@@ -6,20 +6,20 @@ repo_dir: /content/img2img-turbo
 drive_dataset_dir: /content/drive/MyDrive/paired_edit_core_v1
 prepared_workdir: /content/workdir/paired_edit
 output_dir: /content/workdir/paired_edit/output
-drive_output_dir: /content/drive/MyDrive/nail-retouch-paired-outputs
+drive_output_dir: /content/drive/MyDrive/nail-retouch-paired-core-v1-outputs
 pretrained_model_name_or_path: stabilityai/sd-turbo
 training:
   resolution: 256
   train_image_prep: resize_256
   test_image_prep: resize_256
   train_batch_size: 1
-  num_training_epochs: 200
-  max_train_steps: 5000
-  viz_freq: 25
-  checkpointing_steps: 250
+  num_training_epochs: 120
+  max_train_steps: 1500
+  viz_freq: 50
+  checkpointing_steps: 100
   sync_to_drive_interval_seconds: 120
   auto_resume_from_drive: true
-  mixed_precision: null
+  mixed_precision: fp16
   gradient_checkpointing: true
   allow_tf32: true
   enable_xformers_memory_efficient_attention: true
