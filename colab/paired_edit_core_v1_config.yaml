@@ -1,8 +1,11 @@
 project_name: nail-retouch-paired-core-v1-guarded
 project_root: /content/nail-retouch-assistant
+train_workdir: /content/nail-retouch-assistant
+train_script: src/paired_edit/train_supervised_retouch.py
 dataset_dir: dataset/paired_edit_core_v1
 repo_url: https://github.com/GaParmar/img2img-turbo.git
 repo_dir: /content/img2img-turbo
+upstream_src_dir: /content/img2img-turbo/src
 drive_dataset_dir: /content/drive/MyDrive/paired_edit_core_v1
 prepared_workdir: /content/workdir/paired_edit
 output_dir: /content/workdir/paired_edit/output
@@ -17,6 +20,7 @@ training:
   num_training_epochs: 120
   max_train_steps: 1500
   viz_freq: 50
+  eval_freq: 100
   checkpointing_steps: 100
   sync_to_drive_interval_seconds: 120
   auto_resume_from_drive: true
