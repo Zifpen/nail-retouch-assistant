@@ -8,6 +8,7 @@ prepared_workdir: /content/workdir/paired_edit
 output_dir: /content/workdir/paired_edit/output
 drive_output_dir: /content/drive/MyDrive/nail-retouch-paired-phase1-oldroute-outputs
 pretrained_model_name_or_path: stabilityai/sd-turbo
+paired_prompt: "professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, preserve original nail design, natural skin texture, realistic hand photo"
 training:
   resolution: 256
   train_image_prep: resize_256
