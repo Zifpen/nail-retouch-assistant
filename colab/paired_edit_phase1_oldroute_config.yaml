@@ -1,5 +1,7 @@
 project_name: nail-retouch-paired-phase1-oldroute
 project_root: /content/nail-retouch-assistant
+train_workdir: /content/img2img-turbo
+train_script: src/train_pix2pix_turbo.py
 dataset_dir: dataset/paired_edit_core_v1
 repo_url: https://github.com/GaParmar/img2img-turbo.git
 repo_dir: /content/img2img-turbo
