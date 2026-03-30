@@ -1,0 +1,30 @@
+project_name: nail-retouch-paired-phase1-expand-batch1-oldroute
+project_root: /content/nail-retouch-assistant
+train_workdir: /content/img2img-turbo
+train_script: src/train_pix2pix_turbo.py
+dataset_dir: dataset/paired_edit_phase1_expand_batch1
+repo_url: https://github.com/GaParmar/img2img-turbo.git
+repo_dir: /content/img2img-turbo
+drive_raw_dir: /content/drive/MyDrive/nail-retouch-raw
+drive_dataset_dir: /content/drive/MyDrive/paired_edit_phase1_expand_batch1
+prepared_workdir: /content/workdir/paired_edit
+output_dir: /content/workdir/paired_edit/output
+drive_output_dir: /content/drive/MyDrive/nail-retouch-paired-phase1-expand-batch1-oldroute-outputs
+pretrained_model_name_or_path: stabilityai/sd-turbo
+paired_prompt: "professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, preserve original nail design, natural skin texture, realistic hand photo"
+training:
+  resolution: 256
+  train_image_prep: resize_256
+  test_image_prep: resize_256
+  train_batch_size: 1
+  num_training_epochs: 200
+  max_train_steps: 5000
+  viz_freq: 25
+  checkpointing_steps: 250
+  sync_to_drive_interval_seconds: 120
+  auto_resume_from_drive: true
+  mixed_precision: null
+  gradient_checkpointing: true
+  allow_tf32: true
+  enable_xformers_memory_efficient_attention: true
+  track_val_fid: false

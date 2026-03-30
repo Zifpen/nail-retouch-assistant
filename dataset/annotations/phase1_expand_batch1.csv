@@ -1,0 +1,13 @@
+id,why_selected
+pair_0086,"short french,低装饰，cleanup 信号很干净"
+pair_0092,"colored micro-french，变化清晰但不复杂"
+pair_0093,"close-up color-tip，边缘修正信号强"
+pair_0106,"simple opaque white，低结构复杂度"
+pair_0108,"french macro，甲缘与形状监督明确"
+pair_0112,"high-contrast french，几何清楚，学习信号强"
+pair_0143,"simple nude almond，稳定保真样本"
+pair_0157,"nude-square close-up，polish-edge cleanup 很直接"
+pair_0163,"plain white short set，非常低复杂度"
+pair_0181,"plain nude-french short set，接近教学样本理想形态"
+pair_0204,"simple nude close-up，稳定且接近真实推理分布"
+pair_0216,"simple french almond，低风险扩展样本"
