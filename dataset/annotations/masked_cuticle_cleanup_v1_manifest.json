@@ -1,0 +1,63 @@
+{
+  "default_prompt": "professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, preserve original nail design, natural skin texture, realistic hand photo",
+  "default_task": "proximal_nail_boundary_refinement",
+  "train_ids": [
+    "pair_0005",
+    "pair_0015",
+    "pair_0018",
+    "pair_0032",
+    "pair_0054",
+    "pair_0057",
+    "pair_0063",
+    "pair_0070"
+  ],
+  "val_ids": [
+    "pair_0009",
+    "pair_0040",
+    "pair_0047",
+    "pair_0050"
+  ],
+  "prompts": {},
+  "tasks": {
+    "pair_0005": "proximal_nail_boundary_refinement",
+    "pair_0015": "proximal_nail_boundary_refinement",
+    "pair_0018": "proximal_nail_boundary_refinement",
+    "pair_0032": "proximal_nail_boundary_refinement",
+    "pair_0054": "proximal_nail_boundary_refinement",
+    "pair_0057": "proximal_nail_boundary_refinement",
+    "pair_0063": "proximal_nail_boundary_refinement",
+    "pair_0070": "proximal_nail_boundary_refinement",
+    "pair_0009": "proximal_nail_boundary_refinement",
+    "pair_0040": "proximal_nail_boundary_refinement",
+    "pair_0047": "proximal_nail_boundary_refinement",
+    "pair_0050": "proximal_nail_boundary_refinement"
+  },
+  "masks": {
+    "pair_0005": "masks/masked_cuticle_cleanup_v1/pair_0005.png",
+    "pair_0015": "masks/masked_cuticle_cleanup_v1/pair_0015.png",
+    "pair_0018": "masks/masked_cuticle_cleanup_v1/pair_0018.png",
+    "pair_0032": "masks/masked_cuticle_cleanup_v1/pair_0032.png",
+    "pair_0054": "masks/masked_cuticle_cleanup_v1/pair_0054.png",
+    "pair_0057": "masks/masked_cuticle_cleanup_v1/pair_0057.png",
+    "pair_0063": "masks/masked_cuticle_cleanup_v1/pair_0063.png",
+    "pair_0070": "masks/masked_cuticle_cleanup_v1/pair_0070.png",
+    "pair_0009": "masks/masked_cuticle_cleanup_v1/pair_0009.png",
+    "pair_0040": "masks/masked_cuticle_cleanup_v1/pair_0040.png",
+    "pair_0047": "masks/masked_cuticle_cleanup_v1/pair_0047.png",
+    "pair_0050": "masks/masked_cuticle_cleanup_v1/pair_0050.png"
+  },
+  "bootstrap_masks": {
+    "pair_0005": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0005.png",
+    "pair_0015": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0015.png",
+    "pair_0018": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0018.png",
+    "pair_0032": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0032.png",
+    "pair_0054": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0054.png",
+    "pair_0057": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0057.png",
+    "pair_0063": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0063.png",
+    "pair_0070": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0070.png",
+    "pair_0009": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0009.png",
+    "pair_0040": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0040.png",
+    "pair_0047": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0047.png",
+    "pair_0050": "../annotation_packs/masked_cuticle_cleanup_v1/bootstrap_masks/pair_0050.png"
+  }
+}

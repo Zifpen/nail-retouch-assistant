@@ -1,0 +1,25 @@
+{
+  "default_prompt": "professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, preserve original nail design, natural skin texture, realistic hand photo",
+  "default_task": "proximal_nail_boundary_refinement",
+  "train_ids": [
+    "pair_0015",
+    "pair_0018"
+  ],
+  "val_ids": [
+    "pair_0009",
+    "pair_0040"
+  ],
+  "prompts": {},
+  "tasks": {
+    "pair_0015": "proximal_nail_boundary_refinement",
+    "pair_0018": "proximal_nail_boundary_refinement",
+    "pair_0009": "proximal_nail_boundary_refinement",
+    "pair_0040": "proximal_nail_boundary_refinement"
+  },
+  "masks": {
+    "pair_0015": "masks/masked_cuticle_cleanup_v1/pair_0015.png",
+    "pair_0018": "masks/masked_cuticle_cleanup_v1/pair_0018.png",
+    "pair_0009": "masks/masked_cuticle_cleanup_v1/pair_0009.png",
+    "pair_0040": "masks/masked_cuticle_cleanup_v1/pair_0040.png"
+  }
+}
