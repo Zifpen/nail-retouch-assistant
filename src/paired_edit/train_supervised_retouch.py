@@ -23,6 +23,9 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm.auto import tqdm
 
+from pix2pix_runtime import apply_runtime_checkpoint_patch, prepare_runtime_upstream
+from shared_config import PAIRED_EDIT_PROMPT
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train a supervised paired retouch model.")
@@ -30,6 +33,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output_dir", required=True)
     parser.add_argument("--dataset_folder", required=True)
     parser.add_argument("--upstream_src_dir", default=None)
+    parser.add_argument("--paired_prompt", default=PAIRED_EDIT_PROMPT)
+    parser.add_argument("--allow_dataset_prompt_variants", action="store_true")
 
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--resolution", type=int, default=256)
@@ -63,10 +68,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--enable_xformers_memory_efficient_attention", action="store_true")
     parser.add_argument("--set_grads_to_none", action="store_true")
 
-    parser.add_argument("--lambda_l2", type=float, default=1.0)
-    parser.add_argument("--lambda_lpips", type=float, default=5.0)
+    parser.add_argument("--lambda_full_l1", type=float, default=1.0)
+    parser.add_argument("--lambda_preserve", type=float, default=2.0)
+    parser.add_argument("--lambda_edit", type=float, default=2.0)
+    parser.add_argument("--lambda_l2", type=float, default=0.0)
+    parser.add_argument("--lambda_lpips", type=float, default=0.5)
     parser.add_argument("--lambda_gan", type=float, default=0.0)
     parser.add_argument("--lambda_clipsim", type=float, default=0.0)
+    parser.add_argument("--change_mask_threshold", type=float, default=0.12)
+    parser.add_argument("--change_mask_dilate", type=int, default=3)
     return parser.parse_args()
 
 
@@ -79,6 +89,49 @@ def add_upstream_src_to_path(upstream_src_dir: str | None) -> Path:
         raise FileNotFoundError(f"Upstream img2img-turbo src not found: {src_dir}")
     sys.path.insert(0, str(src_dir))
     return src_dir
+
+
+def prepare_training_runtime(upstream_src_dir: str | None, device: str) -> Path:
+    src_dir = add_upstream_src_to_path(upstream_src_dir)
+    upstream_root = src_dir.parent if src_dir.name == "src" else src_dir
+    runtime_root = prepare_runtime_upstream(upstream_root, device)
+    apply_runtime_checkpoint_patch(runtime_root)
+    runtime_src = runtime_root / "src"
+    sys.path.insert(0, str(runtime_src))
+    os.environ["PIX2PIX_TURBO_DEVICE"] = device
+    return runtime_src
+
+
+def resolve_resume_model_path(
+    *,
+    resume_state_path: str | None,
+    resume_pkl: str | None,
+    output_dir: Path,
+    global_step_hint: int | None = None,
+) -> str | None:
+    candidates: list[Path] = []
+    if resume_pkl:
+        candidates.append(Path(resume_pkl))
+    if resume_state_path:
+        state_path = Path(resume_state_path)
+        if global_step_hint is not None:
+            candidates.append(state_path.with_name(f"model_{global_step_hint}.pkl"))
+        state_name = state_path.name
+        if state_name.startswith("training_state_") and state_name.endswith(".pt"):
+            suffix = state_name[len("training_state_") : -len(".pt")]
+            candidates.append(state_path.with_name(f"model_{suffix}.pkl"))
+    if global_step_hint is not None:
+        candidates.append(output_dir / "checkpoints" / f"model_{global_step_hint}.pkl")
+
+    seen: set[Path] = set()
+    for candidate in candidates:
+        candidate = candidate.expanduser()
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        if candidate.exists():
+            return str(candidate)
+    return resume_pkl
 
 
 def save_image_tensor(tensor: torch.Tensor, path: Path, *, source: bool) -> None:
@@ -112,34 +165,143 @@ def save_triptych(source: torch.Tensor, pred: torch.Tensor, target: torch.Tensor
     canvas.save(path)
 
 
-def evaluate(model, dataloader, net_lpips, device: torch.device) -> dict[str, float]:
+def ensure_dataset_prompt_consistency(dataset_folder: Path, paired_prompt: str) -> None:
+    for prompt_name in ("train_prompts.json", "test_prompts.json"):
+        prompt_path = dataset_folder / prompt_name
+        if not prompt_path.exists():
+            continue
+        prompt_map = json.loads(prompt_path.read_text(encoding="utf-8"))
+        unique_prompts = {str(value) for value in prompt_map.values()}
+        if not unique_prompts:
+            continue
+        if unique_prompts != {paired_prompt}:
+            raise ValueError(
+                f"Prompt mismatch in {prompt_path}: expected only {paired_prompt!r}, found {sorted(unique_prompts)!r}"
+            )
+
+
+def summarize_dataset_prompts(dataset_folder: Path) -> dict[str, list[str]]:
+    summary: dict[str, list[str]] = {}
+    for prompt_name in ("train_prompts.json", "test_prompts.json"):
+        prompt_path = dataset_folder / prompt_name
+        if not prompt_path.exists():
+            continue
+        prompt_map = json.loads(prompt_path.read_text(encoding="utf-8"))
+        summary[prompt_name] = sorted({str(value) for value in prompt_map.values()})
+    return summary
+
+
+def masked_l1(pred: torch.Tensor, target: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    expanded_mask = mask.expand(-1, pred.shape[1], -1, -1)
+    denom = expanded_mask.sum().clamp_min(1.0)
+    return ((pred - target).abs() * expanded_mask).sum() / denom
+
+
+def build_change_masks(
+    x_src_01: torch.Tensor,
+    x_tgt_norm: torch.Tensor,
+    *,
+    threshold: float,
+    dilate_kernel: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    x_src_01 = x_src_01.float()
+    x_tgt_01 = x_tgt_norm.float() * 0.5 + 0.5
+    diff = (x_tgt_01 - x_src_01).abs().amax(dim=1, keepdim=True)
+    change_mask = (diff > threshold).float()
+    if dilate_kernel > 1:
+        change_mask = F.max_pool2d(
+            change_mask,
+            kernel_size=dilate_kernel,
+            stride=1,
+            padding=dilate_kernel // 2,
+        )
+    preserve_mask = 1.0 - change_mask
+    return change_mask, preserve_mask
+
+
+def mask_ratio(mask: torch.Tensor) -> float:
+    return float(mask.detach().float().mean().item())
+
+
+def validate_mask_sanity(change_mask: torch.Tensor, preserve_mask: torch.Tensor) -> dict[str, float]:
+    if change_mask.shape != preserve_mask.shape:
+        raise ValueError(f"Mask shape mismatch: {change_mask.shape} vs {preserve_mask.shape}")
+    if not torch.allclose(change_mask + preserve_mask, torch.ones_like(change_mask)):
+        raise ValueError("Preserve mask is not complementary to change mask.")
+
+    change_ratio = change_mask.detach().float().mean(dim=(1, 2, 3))
+    if torch.any(change_ratio <= 1e-4):
+        raise ValueError(
+            f"Change mask is empty for at least one sample: ratios={change_ratio.tolist()}"
+        )
+    if torch.any(change_ratio >= 0.60):
+        raise ValueError(
+            f"Change mask covers too much of the image: ratios={change_ratio.tolist()}"
+        )
+    preserve_ratio = preserve_mask.detach().float().mean(dim=(1, 2, 3))
+    return {
+        "change_ratio_min": float(change_ratio.min().item()),
+        "change_ratio_max": float(change_ratio.max().item()),
+        "change_ratio_mean": float(change_ratio.mean().item()),
+        "preserve_ratio_min": float(preserve_ratio.min().item()),
+        "preserve_ratio_max": float(preserve_ratio.max().item()),
+        "preserve_ratio_mean": float(preserve_ratio.mean().item()),
+    }
+
+
+def evaluate(model, dataloader, net_lpips, device: torch.device, args: argparse.Namespace) -> dict[str, float]:
     model.eval()
+    full_l1_vals: list[float] = []
+    preserve_l1_vals: list[float] = []
+    edit_l1_vals: list[float] = []
     l2_vals: list[float] = []
     lpips_vals: list[float] = []
+    change_ratio_vals: list[float] = []
     with torch.no_grad():
         for batch in dataloader:
             x_src = batch["conditioning_pixel_values"].to(device)
             x_tgt = batch["output_pixel_values"].to(device)
             x_pred = model(x_src, prompt_tokens=batch["input_ids"].to(device), deterministic=True)
-            l2_vals.append(F.mse_loss(x_pred.float(), x_tgt.float(), reduction="mean").item())
-            lpips_vals.append(net_lpips(x_pred.float(), x_tgt.float()).mean().item())
+            x_pred_f = x_pred.float()
+            x_tgt_f = x_tgt.float()
+            src_norm = x_src.float() * 2.0 - 1.0
+            change_mask, preserve_mask = build_change_masks(
+                x_src,
+                x_tgt,
+                threshold=args.change_mask_threshold,
+                dilate_kernel=args.change_mask_dilate,
+            )
+            validate_mask_sanity(change_mask, preserve_mask)
+            full_l1_vals.append(F.l1_loss(x_pred_f, x_tgt_f, reduction="mean").item())
+            preserve_l1_vals.append(masked_l1(x_pred_f, src_norm, preserve_mask).item())
+            edit_l1_vals.append(masked_l1(x_pred_f, x_tgt_f, change_mask).item())
+            l2_vals.append(F.mse_loss(x_pred_f, x_tgt_f, reduction="mean").item())
+            lpips_vals.append(net_lpips(x_pred_f, x_tgt_f).mean().item())
+            change_ratio_vals.append(mask_ratio(change_mask))
     model.train()
     return {
+        "val/full_l1": float(sum(full_l1_vals) / max(1, len(full_l1_vals))),
+        "val/preserve_l1": float(sum(preserve_l1_vals) / max(1, len(preserve_l1_vals))),
+        "val/edit_l1": float(sum(edit_l1_vals) / max(1, len(edit_l1_vals))),
         "val/l2": float(sum(l2_vals) / max(1, len(l2_vals))),
         "val/lpips": float(sum(lpips_vals) / max(1, len(lpips_vals))),
+        "val/change_ratio": float(sum(change_ratio_vals) / max(1, len(change_ratio_vals))),
     }
 
 
 def main(args: argparse.Namespace) -> None:
-    add_upstream_src_to_path(args.upstream_src_dir)
-
-    from my_utils.training_utils import PairedDataset
-    from pix2pix_turbo import Pix2Pix_Turbo
+    if args.change_mask_dilate < 1 or args.change_mask_dilate % 2 == 0:
+        raise ValueError("--change_mask_dilate must be a positive odd integer.")
 
     accelerator = Accelerator(
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         mixed_precision=args.mixed_precision,
     )
+    runtime_device = accelerator.device.type
+    prepare_training_runtime(args.upstream_src_dir, runtime_device)
+
+    from my_utils.training_utils import PairedDataset
+    from pix2pix_turbo import Pix2Pix_Turbo
 
     if args.seed is not None:
         set_seed(args.seed)
@@ -156,6 +318,18 @@ def main(args: argparse.Namespace) -> None:
         ckpt_dir.mkdir(parents=True, exist_ok=True)
         sample_dir.mkdir(parents=True, exist_ok=True)
         eval_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / "run_config.json").write_text(
+            json.dumps(vars(args), indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
+    dataset_folder = Path(args.dataset_folder)
+    if args.allow_dataset_prompt_variants:
+        if accelerator.is_main_process:
+            print("Dataset prompt variants allowed:")
+            print(json.dumps(summarize_dataset_prompts(dataset_folder), indent=2, ensure_ascii=False))
+    else:
+        ensure_dataset_prompt_consistency(dataset_folder, args.paired_prompt)
 
     resume_state = None
     resume_pkl = os.environ.get("IMG2IMG_TURBO_RESUME_PKL")
@@ -163,8 +337,15 @@ def main(args: argparse.Namespace) -> None:
     if resume_state_path:
         resume_state = torch.load(resume_state_path, map_location="cpu")
         resume_pkl = resume_state.get("model_path", resume_pkl)
+        resume_pkl = resolve_resume_model_path(
+            resume_state_path=resume_state_path,
+            resume_pkl=resume_pkl,
+            output_dir=output_dir,
+            global_step_hint=resume_state.get("global_step"),
+        )
         if accelerator.is_main_process:
             print(f"Resuming supervised retouch full state from: {resume_state_path}")
+            print(f"Resolved supervised retouch model weights: {resume_pkl}")
     elif resume_pkl and accelerator.is_main_process:
         print(f"Resuming supervised retouch weights from: {resume_pkl}")
 
@@ -278,6 +459,7 @@ def main(args: argparse.Namespace) -> None:
     )
 
     model.train()
+    mask_sanity_logged = False
     for epoch in range(starting_epoch, args.num_training_epochs):
         if global_step >= args.max_train_steps:
             break
@@ -290,11 +472,29 @@ def main(args: argparse.Namespace) -> None:
             with accelerator.accumulate(model):
                 x_src = batch["conditioning_pixel_values"]
                 x_tgt = batch["output_pixel_values"]
-                x_pred = model(x_src, prompt_tokens=batch["input_ids"], deterministic=True)
+                src_norm = x_src.float() * 2.0 - 1.0
+                change_mask, preserve_mask = build_change_masks(
+                    x_src,
+                    x_tgt,
+                    threshold=args.change_mask_threshold,
+                    dilate_kernel=args.change_mask_dilate,
+                )
+                if not mask_sanity_logged:
+                    sanity_stats = validate_mask_sanity(change_mask, preserve_mask)
+                    if accelerator.is_main_process:
+                        print(f"Mask sanity: {json.dumps(sanity_stats, indent=2)}")
+                    mask_sanity_logged = True
 
-                loss_l2 = F.mse_loss(x_pred.float(), x_tgt.float(), reduction="mean") * args.lambda_l2
-                loss_lpips = net_lpips(x_pred.float(), x_tgt.float()).mean() * args.lambda_lpips
-                loss = loss_l2 + loss_lpips
+                x_pred = model(x_src, prompt_tokens=batch["input_ids"], deterministic=True)
+                x_pred_f = x_pred.float()
+                x_tgt_f = x_tgt.float()
+
+                loss_full_l1 = F.l1_loss(x_pred_f, x_tgt_f, reduction="mean") * args.lambda_full_l1
+                loss_preserve = masked_l1(x_pred_f, src_norm, preserve_mask) * args.lambda_preserve
+                loss_edit = masked_l1(x_pred_f, x_tgt_f, change_mask) * args.lambda_edit
+                loss_lpips = net_lpips(x_pred_f, x_tgt_f).mean() * args.lambda_lpips
+                loss_l2 = F.mse_loss(x_pred_f, x_tgt_f, reduction="mean") * args.lambda_l2
+                loss = loss_full_l1 + loss_preserve + loss_edit + loss_lpips + loss_l2
 
                 accelerator.backward(loss)
                 if accelerator.sync_gradients:
@@ -310,25 +510,41 @@ def main(args: argparse.Namespace) -> None:
             global_step += 1
             logs = {
                 "loss": loss.detach().item(),
+                "loss_full_l1": loss_full_l1.detach().item(),
+                "loss_preserve": loss_preserve.detach().item(),
+                "loss_edit": loss_edit.detach().item(),
                 "loss_l2": loss_l2.detach().item(),
                 "loss_lpips": loss_lpips.detach().item(),
+                "change_ratio": mask_ratio(change_mask),
                 "lr": lr_scheduler.get_last_lr()[0],
             }
             progress_bar.set_postfix(**logs)
 
-            if accelerator.is_main_process and global_step % args.viz_freq == 1:
+            if accelerator.is_main_process and (
+                global_step == 1 or global_step % args.viz_freq == 0
+            ):
                 sample_path = sample_dir / f"train_step_{global_step:06d}.png"
                 save_triptych(x_src[0], x_pred[0], x_tgt[0], sample_path)
                 print(f"Saved sample: {sample_path}")
 
-            if accelerator.is_main_process and global_step % args.eval_freq == 1:
-                eval_logs = evaluate(accelerator.unwrap_model(model), val_dataloader, net_lpips, accelerator.device)
+            if accelerator.is_main_process and (
+                global_step == 1 or global_step % args.eval_freq == 0
+            ):
+                eval_logs = evaluate(
+                    accelerator.unwrap_model(model),
+                    val_dataloader,
+                    net_lpips,
+                    accelerator.device,
+                    args,
+                )
                 summary_path = eval_dir / f"metrics_{global_step:06d}.json"
                 summary_path.write_text(json.dumps(eval_logs, indent=2), encoding="utf-8")
                 print(f"Saved eval metrics: {summary_path}")
                 print(json.dumps(eval_logs, indent=2))
 
-            if accelerator.is_main_process and global_step % args.checkpointing_steps == 1:
+            if accelerator.is_main_process and (
+                global_step == 1 or global_step % args.checkpointing_steps == 0
+            ):
                 model_path = ckpt_dir / f"model_{global_step}.pkl"
                 accelerator.unwrap_model(model).save_model(str(model_path))
                 state_path = ckpt_dir / f"training_state_{global_step}.pt"
