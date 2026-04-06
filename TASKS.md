@@ -1,0 +1,75 @@
+# Tasks
+
+Last updated: 2026-04-05
+
+## Completed
+
+- [x] Bootstrap persistent project memory files for ongoing experiment tracking.
+- [x] Add paired drift audit script in [`src/data/audit_paired_drift.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/data/audit_paired_drift.py).
+- [x] Audit `paired_edit_core_v1`, `paired_edit_phase1_expand_batch1`, `paired_edit_phase1_expand_batch1_pruned`, and `paired_edit_strict_plus`.
+- [x] Confirm that the failure mode is dataset-first: core data still teaches positive whole-image lift.
+- [x] Add [`src/data/build_masked_inpaint_dataset.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/data/build_masked_inpaint_dataset.py) for `input + mask + target_local` export.
+- [x] Add pairwise unmasked-region color alignment and per-pair alignment statistics to the masked dataset metadata.
+- [x] Smoke-test the masked dataset builder on a 4-pair subset using bootstrap diff masks.
+- [x] Add [`src/training/train_masked_inpaint_lora.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/training/train_masked_inpaint_lora.py) as the new masked inpainting training entrypoint.
+- [x] Add explicit masked diffusion, outside-mask identity, and masked color losses to the new training route.
+- [x] Add a dedicated masked inpainting inference entrypoint in [`src/inference/run_masked_inpaint_inference.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/inference/run_masked_inpaint_inference.py).
+- [x] Add split masked-route validation metrics in [`src/inference/run_masked_inpaint_validation.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/inference/run_masked_inpaint_validation.py).
+- [x] Scaffold the first explicit-mask annotation subset with [`src/data/prepare_explicit_mask_subset.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/data/prepare_explicit_mask_subset.py).
+- [x] Create [`dataset/annotations/paired_edit_core_v2_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/paired_edit_core_v2_manifest.json), build `dataset/paired_edit_core_v2`, and re-audit the filtered dataset.
+- [x] Approve the first four explicit masks: `pair_0015`, `pair_0018`, `pair_0009`, `pair_0040`.
+- [x] Build the four-mask explicit smoke dataset [`dataset/masked_inpaint_cuticle_cleanup_v1_smoke`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_cuticle_cleanup_v1_smoke).
+- [x] Confirm that the masked training route can initialize and execute real steps on the explicit smoke subset.
+- [x] Add a lower-cost local masked smoke entrypoint in [`scripts/run_masked_inpaint_local_smoke.sh`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/scripts/run_masked_inpaint_local_smoke.sh) and document its scope in [`README.md`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/README.md).
+- [x] Run the new local smoke wrapper end-to-end, record its runtime, and confirm that it writes metrics, a checkpoint, and a preview artifact.
+- [x] Make the local smoke wrapper auto-use a cached inpainting snapshot in offline mode when present, and verify that the default command completes without a manual model override.
+- [x] QA-review newly drawn masks for `pair_0005`, `pair_0032`, `pair_0054`, and `pair_0057`.
+- [x] Approve `pair_0032` and `pair_0054` for the next masked dataset build.
+- [x] Re-review fixed `pair_0005` and `pair_0057`, and approve both for dataset promotion.
+- [x] Build the first real approved-subset masked dataset in [`dataset/masked_inpaint_cuticle_cleanup_v1`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_cuticle_cleanup_v1).
+- [x] Run a 4-step local masked smoke on the approved 8-sample dataset.
+- [x] Finish a 10-step low-cost dry-run on the approved 8-sample masked dataset.
+- [x] QA-review newly drawn masks for `pair_0063` and `pair_0070`, approve both, and promote them into the approved explicit manifest.
+- [x] Rebuild [`dataset/masked_inpaint_cuticle_cleanup_v1`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_cuticle_cleanup_v1) from the expanded 10-sample approved manifest.
+- [x] Run a fresh 10-step local masked dry-run on the expanded 10-sample approved subset and confirm it still writes metrics, a checkpoint, and a preview artifact.
+- [x] QA-review newly drawn masks for `pair_0047` and `pair_0050`, and confirm both pass semantic review for `proximal_nail_boundary_refinement`.
+- [x] Update the approved explicit manifest to include `pair_0047` and `pair_0050`, then rebuild the masked dataset from the fully approved 12-sample seed pack.
+- [x] Run full-12 local masked smoke / dry-run checks at `4`, `10`, and `25` steps and confirm that the training route still writes metrics, checkpoints, and previews.
+- [x] Add a masked Colab training notebook and YAML config for the full 12-sample approved dataset, following the historical paired-edit notebook format.
+- [x] Harden the masked full-12 Colab notebook so it can fall back from a missing `drive_raw_dir` to a cached dataset or auto-discovered raw pair root.
+- [x] Archive the first full-12 masked Colab training outputs locally under [`outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200).
+- [x] Analyze the archived full-12 Colab run through metrics, previews, and checkpoint comparison, and provisionally select `step200` with `step150` as fallback.
+- [x] Restore the local inpainting base snapshot and run the first real local masked validation artifacts for `step150` and `step200` on `pair_0009`.
+- [x] Recover a second trustworthy local validation point for `step150` by switching from safety-unstable `pair_0040` to clean val sample `pair_0047`.
+- [x] Complete the direct `step150` vs `step200` comparison on `pair_0047`.
+- [x] Classify the last remaining full-12 val sample `pair_0050` as safety-unstable after two blacked-out local validation attempts.
+- [x] Launch the local `legacy core_v2` dataset-only retrain far enough to classify the blocker as missing `xformers`, not dataset or command failure.
+- [x] Add a dedicated Colab handoff for the guarded `legacy core_v2` retrain with dataset-only changes.
+- [x] Sync the GitHub branch-visible paired trainer CLI with the `core_v2` Colab handoff after Colab exposed a stale-script mismatch.
+- [x] Identify the exact `core_v2` validation outlier blocking the first real Colab retrain and confirm that the failure is `pair_0050` at eval-time `change_ratio=0.6575`.
+
+## Next Experiments
+
+- [ ] Decide whether `pair_0050` should leave the clean `core_v2` validation split or move into a separate harder validation bucket for the dataset-only legacy baseline.
+- [ ] Retry the guarded `core_v2` retrain after the validation-split decision, with training variables still unchanged.
+- [ ] Run local validation on the same fixed baseline set after the retrain: `pair_0005`, `pair_0015`, `pair_0009`, `pair_0040`.
+- [ ] Compare whether whitening, blue-channel lift, and texture loss fall relative to the old-route artifacts.
+- [ ] Decide whether `pair_0022` and `pair_0066` should stay in `core_v2` or move to a secondary set if preserve-region drift stays high.
+
+## Migration Plan
+
+- [ ] Wire notebooks / calling scripts to prefer the new inpainting inference entrypoint over the legacy paired-edit CLI.
+- [ ] Introduce or curate task labels/manifests that split at least `proximal_nail_boundary_refinement` and stronger `shape_refinement`.
+- [x] Keep the current 10-sample approved explicit subset as the first real masked training set instead of waiting on deferred `pair_0047` / `pair_0050`.
+- [ ] Decide whether the full 12-sample approved masked dataset should now replace the previous 10-sample subset as the default long-run training set in project messaging and downstream configs.
+- [ ] Move the current full 12-sample approved masked subset onto faster hardware or Colab for the first more informative GPU-side masked run beyond local CPU dry-runs.
+- [ ] Run real masked validation on the archived full-12 Colab checkpoints in an environment with a complete inpainting base, comparing `step150` vs `step200` with checkpoint step as the only changed variable.
+- [ ] Decide whether the current two-sample local validation evidence (`pair_0009`, `pair_0047`) is sufficient to move on, or whether a broader clean validation pass is worth the runtime.
+- [x] Push the dedicated `core_v2` Colab handoff files to GitHub and use that entrypoint for the first guarded GPU-side `core_v2` retrain.
+
+## Backlog
+
+- [ ] Evaluate whether mild color normalization of targets is needed after dataset-only filtering.
+- [ ] Consider splitting `proximal_nail_boundary_refinement` and stronger shape-refinement into separate training routes if a filtered dataset still causes coupled failures.
+- [ ] Add a small hard validation set from `hard_val_optional` after the core route stops collapsing on easy pairs.
+- [ ] Consider a `core_v3` legacy manifest if `pair_0022`, `pair_0066`, and `pair_0035` still dominate preserve-region drift after the `core_v2` retrain.
