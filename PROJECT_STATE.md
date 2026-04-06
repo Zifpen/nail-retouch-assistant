@@ -1667,6 +1667,11 @@ Conclusion:
 - The existing Colab notebook now defaults to that early-stop config:
   - [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
   - `CONFIG_FILE` now points to `masked_inpaint_full12_earlystop_config.yaml`, so a fresh clone can run the budget-only refinement without manual notebook edits.
+- The dataset-prepare cell in that notebook now also validates cached Drive datasets explicitly via:
+  - `build_summary.json`
+  - `train/metadata.jsonl`
+  - `val/metadata.jsonl`
+  so the Colab handoff prefers a correctly uploaded cached full-12 dataset more robustly and prints clearer diagnostics when the Drive copy is malformed.
 
 ## Visual Artifacts
 

@@ -83,6 +83,7 @@ Last updated: 2026-04-06
 - [ ] Run a budget-only masked early-stop refinement on faster hardware, keeping the full-12 dataset and all other training variables fixed while tightening the useful checkpoint region around `step100`.
 - [x] Prepare a dedicated Colab config for the full-12 masked early-stop refinement experiment.
 - [x] Update the existing masked full-12 Colab notebook so a fresh clone defaults to the early-stop config without manual notebook edits.
+- [x] Harden the masked full-12 early-stop Colab notebook so it explicitly accepts a correctly uploaded cached Drive dataset before falling back to raw-pair discovery.
 - [x] Run real masked validation on the archived full-12 Colab checkpoints in an environment with a complete inpainting base, comparing `step150` vs `step200` with checkpoint step as the only changed variable.
 - [x] Decide whether the earlier two-sample local validation evidence (`pair_0009`, `pair_0047`) was sufficient to move on, or whether broader coverage was worth the runtime.
 - [x] Push the dedicated `core_v2` Colab handoff files to GitHub and use that entrypoint for the first guarded GPU-side `core_v2` retrain.

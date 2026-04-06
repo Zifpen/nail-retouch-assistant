@@ -544,6 +544,10 @@ python3 src/training/train_masked_inpaint_lora.py \
 - Colab handoff is now one step simpler:
   - [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb) now defaults to `masked_inpaint_full12_earlystop_config.yaml`
   - after a fresh clone, the user no longer needs to edit `CONFIG_FILE` manually before running the notebook
+- The same notebook now also treats a correctly uploaded cached dataset as a first-class input:
+  - it explicitly validates `build_summary.json`, `train/metadata.jsonl`, and `val/metadata.jsonl` under `/content/drive/MyDrive/masked_inpaint_cuticle_cleanup_v1_full12`
+  - it prints Drive existence / child diagnostics before attempting raw-pair fallback
+  - this should prevent a valid cached full-12 dataset from being mistaken for a missing-input situation
 - Legacy comparison protocol is prepared:
   - baseline pair ids: `pair_0005`, `pair_0015`, `pair_0009`, `pair_0040`
   - compare new `core_v2` checkpoint against [`outputs/checkpoints/model_1401.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/checkpoints/model_1401.pkl)
