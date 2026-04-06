@@ -55,6 +55,10 @@ Last updated: 2026-04-06
 - [x] Decide that `pair_0022` and `pair_0066` should leave the legacy clean baseline and move into a temporary secondary set.
 - [x] Build and audit `paired_edit_core_v3`, `paired_edit_core_v3_secondary`, `paired_edit_core_v3_cleanval`, and `paired_edit_core_v3_hardval`.
 - [x] Prepare a dedicated `core_v3 cleanval` Colab config so the next guarded legacy retrain can start from the cleaner split directly.
+- [x] Archive the completed `core_v3 cleanval` Colab run locally and compare it against the `core_v2 cleanval` baseline.
+- [x] Run strict local validation on the same fixed baseline set for `core_v3 cleanval model_1500`.
+- [x] Copy all user-provided external result zips into a workspace archive before clearing the system `Download` folder.
+- [x] Recover full 4-sample masked validation coverage by making the local safety-checker bypass explicitly opt-in, then re-compare `step150` vs `step200` on `pair_0040` and `pair_0050`.
 
 ## Next Experiments
 
@@ -63,8 +67,11 @@ Last updated: 2026-04-06
 - [x] Run local validation on the same fixed baseline set after the retrain: `pair_0005`, `pair_0015`, `pair_0009`, `pair_0040`.
 - [x] Compare whether whitening, blue-channel lift, and texture loss fall relative to the old-route artifacts.
 - [x] Decide whether `pair_0022` and `pair_0066` should stay in `core_v2` or move to a secondary set if preserve-region drift stays high.
-- [ ] Run the next guarded legacy retrain on `dataset/paired_edit_core_v3_cleanval` with no training-variable changes.
-- [ ] Compare the future `core_v3 cleanval` checkpoint against the current `core_v2 cleanval model_1500` baseline on the same fixed validation pair set.
+- [x] Run the next guarded legacy retrain on `dataset/paired_edit_core_v3_cleanval` with no training-variable changes.
+- [x] Compare the future `core_v3 cleanval` checkpoint against the current `core_v2 cleanval model_1500` baseline on the same fixed validation pair set.
+- [x] Decide the next masked-route training experiment now that:
+  - the legacy dataset-only control line has effectively reached its useful endpoint
+  - and the archived full-12 masked checkpoint ranking has been revalidated on the full 4-sample local validation split.
 
 ## Migration Plan
 
@@ -73,8 +80,11 @@ Last updated: 2026-04-06
 - [x] Keep the current 10-sample approved explicit subset as the first real masked training set instead of waiting on deferred `pair_0047` / `pair_0050`.
 - [ ] Decide whether the full 12-sample approved masked dataset should now replace the previous 10-sample subset as the default long-run training set in project messaging and downstream configs.
 - [ ] Move the current full 12-sample approved masked subset onto faster hardware or Colab for the first more informative GPU-side masked run beyond local CPU dry-runs.
-- [ ] Run real masked validation on the archived full-12 Colab checkpoints in an environment with a complete inpainting base, comparing `step150` vs `step200` with checkpoint step as the only changed variable.
-- [ ] Decide whether the current two-sample local validation evidence (`pair_0009`, `pair_0047`) is sufficient to move on, or whether a broader clean validation pass is worth the runtime.
+- [ ] Run a budget-only masked early-stop refinement on faster hardware, keeping the full-12 dataset and all other training variables fixed while tightening the useful checkpoint region around `step100`.
+- [x] Prepare a dedicated Colab config for the full-12 masked early-stop refinement experiment.
+- [x] Update the existing masked full-12 Colab notebook so a fresh clone defaults to the early-stop config without manual notebook edits.
+- [x] Run real masked validation on the archived full-12 Colab checkpoints in an environment with a complete inpainting base, comparing `step150` vs `step200` with checkpoint step as the only changed variable.
+- [x] Decide whether the earlier two-sample local validation evidence (`pair_0009`, `pair_0047`) was sufficient to move on, or whether broader coverage was worth the runtime.
 - [x] Push the dedicated `core_v2` Colab handoff files to GitHub and use that entrypoint for the first guarded GPU-side `core_v2` retrain.
 
 ## Backlog

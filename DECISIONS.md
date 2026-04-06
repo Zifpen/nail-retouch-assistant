@@ -587,3 +587,63 @@ Implication:
   - guarded retrain on `core_v3_cleanval`
   - compare against the existing `core_v2 cleanval model_1500` baseline
   - do not simultaneously change prompt, loss, rank, or resolution.
+
+## 2026-04-06 - Treat `core_v2 cleanval model_1500` As The Legacy Dataset-Only Endpoint Unless New Evidence Appears
+
+Decision:
+Do not prioritize a `core_v4`-style continuation of the legacy dataset-only pruning line after `core_v3 cleanval`, unless a new, clearly justified outlier diagnosis emerges.
+
+Why:
+
+- The `core_v3 cleanval` retrain was a clean single-variable test of whether removing `pair_0022` and `pair_0066` would materially improve the legacy route.
+- It did not outperform `core_v2 cleanval`; its step-1500 eval metrics were slightly worse across full, preserve, edit, and LPIPS terms.
+- Strict fixed-pair local validation also failed to show a new quality tier; the route stayed in the same soft / blurry regime.
+
+Implication:
+
+- Keep [`outputs/paired_edit_colab_runs/core_v2_cleanval_run_2026-04-05_step1500/nail-retouch-paired-core-v2-cleanval-outputs/checkpoints/model_1500.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_colab_runs/core_v2_cleanval_run_2026-04-05_step1500/nail-retouch-paired-core-v2-cleanval-outputs/checkpoints/model_1500.pkl) as the default legacy paired-edit reference.
+- Treat [`outputs/paired_edit_colab_runs/core_v3_cleanval_run_2026-04-06_step1500/nail-retouch-paired-core-v3-cleanval-outputs/checkpoints/model_1500.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_colab_runs/core_v3_cleanval_run_2026-04-06_step1500/nail-retouch-paired-core-v3-cleanval-outputs/checkpoints/model_1500.pkl) as a closing ablation, not a new primary baseline.
+- Shift the main project priority back toward masked-route training / validation instead of continuing to spend primary budget on legacy dataset-only pruning.
+
+## 2026-04-06 - Make The Masked Safety-Checker Bypass Explicitly Opt-In And Keep `step150` As The Archived Full-12 Default
+
+Decision:
+Add a local-eval-only `--disable-safety-checker` switch to the masked inference / validation entrypoints, and keep `pytorch_lora_weights_step_000150.safetensors` as the default archived checkpoint for the full-12 masked Colab run.
+
+Why:
+
+- The previous local blackouts on `pair_0040` and `pair_0050` were caused by the diffusion safety checker, which prevented full validation coverage even though the pipeline could otherwise render those samples.
+- We need a way to recover trustworthy local evaluation on already-approved retouch images without silently changing default inference behavior for normal usage.
+- Once the safety-checker bypass was enabled only for local validation, both `pair_0040` and `pair_0050` produced real outputs and the full 4-sample validation split became comparable again.
+- With those recovered points included, `step150` still remained slightly better than `step200` across masked, unmasked, and border metrics; the ranking did not reverse after the harder cases were restored.
+
+Implication:
+
+- Keep the default masked inference path safety-checked unless the operator explicitly passes `--disable-safety-checker` for local debugging / validation.
+- Treat safety-checker blackouts as an inference-time artifact class, not as automatic evidence that a masked validation sample or checkpoint is invalid.
+- Keep [`outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/nail-retouch-masked-full12-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/nail-retouch-masked-full12-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors) as the archived full-12 default checkpoint.
+- Move the next masked planning discussion from checkpoint ranking back to the next single training variable worth testing.
+
+## 2026-04-06 - Treat Training Budget As The Next Masked Single Variable And Promote `step100` To The Archived Full-12 Default
+
+Decision:
+Use training budget / early stopping position as the next masked training variable, and promote `pytorch_lora_weights_step_000100.safetensors` to the current archived full-12 default checkpoint.
+
+Why:
+
+- Both the Training Agent and the Evaluation Agent independently converged on the same masked-route priority:
+  - do not change dataset, task split, loss stack, rank, or resolution yet
+  - first answer whether the current route is simply training past its best point
+- The archived full-12 run already contained `step050` and `step100`, so we could finish the budget curve without opening a new training run.
+- On the restored 4-sample local validation split, the ranking is directionally consistent:
+  - `step100` is slightly better than `step150`
+  - `step150` is slightly better than `step200`
+  - `step050` is also slightly better than `step150` / `step200`, but `step100` is the best overall point
+- This makes “early stop around ~100” a better-supported interpretation than “train longer.”
+
+Implication:
+
+- Treat [`outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/nail-retouch-masked-full12-outputs/lora_checkpoints/pytorch_lora_weights_step_000100.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/nail-retouch-masked-full12-outputs/lora_checkpoints/pytorch_lora_weights_step_000100.safetensors) as the current archived full-12 masked reference checkpoint.
+- Keep `step150` as the nearest fallback / comparison point rather than the primary candidate.
+- Define the next masked training experiment as a budget-only early-stop refinement on faster hardware, with dataset, task, prompt, loss, rank, and resolution unchanged.
+- Do not spend the next round changing rank or resolution until the early-stop question is deliberately tightened or falsified.

@@ -1469,6 +1469,205 @@ Conclusion:
   - with training variables unchanged
   - so we can test whether removing these second-tier drift pairs reduces residual blur / preserve-region instability further.
 
+## 2026-04-06D - Archive And Judge The `core_v3 cleanval` Retrain Against `core_v2 cleanval`
+
+Hypothesis:
+If `pair_0022` and `pair_0066` were still major residual drift drivers inside the legacy clean baseline, then the guarded `core_v3 cleanval` retrain should outperform `core_v2 cleanval` on clean-val metrics and on the same strict fixed-pair local validation set.
+
+Change made:
+
+- Archived the user-provided Colab zip:
+  - [`/Volumes/DevSSD/Download/nail-retouch-paired-core-v3-cleanval-outputs-20260406T170817Z-3-001.zip`](/Volumes/DevSSD/Download/nail-retouch-paired-core-v3-cleanval-outputs-20260406T170817Z-3-001.zip)
+  into:
+  - [`outputs/paired_edit_colab_runs/core_v3_cleanval_run_2026-04-06_step1500/nail-retouch-paired-core-v3-cleanval-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_colab_runs/core_v3_cleanval_run_2026-04-06_step1500/nail-retouch-paired-core-v3-cleanval-outputs)
+- Reused the Evaluation Agent to judge whether `core_v3 cleanval` meaningfully improved the legacy dataset-only control line over `core_v2 cleanval`.
+- Reused the Training Agent to define the same strict fixed-pair local validation protocol used for `core_v2 cleanval`, then completed that protocol locally against:
+  - [`outputs/paired_edit_colab_runs/core_v3_cleanval_run_2026-04-06_step1500/nail-retouch-paired-core-v3-cleanval-outputs/checkpoints/model_1500.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_colab_runs/core_v3_cleanval_run_2026-04-06_step1500/nail-retouch-paired-core-v3-cleanval-outputs/checkpoints/model_1500.pkl)
+- New strict local validation outputs:
+  - [`outputs/paired_edit_validation_core_v3_cleanval_model1500/model_1500`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_validation_core_v3_cleanval_model1500/model_1500)
+
+Result:
+
+- The archived `core_v3 cleanval` run is a valid guarded dataset-only retrain:
+  - dataset: `paired_edit_core_v3_cleanval`
+  - prompt, resolution, loss weights, and change-mask settings stayed unchanged
+  - run completed to `1500` steps with checkpoints, eval metrics, and training samples
+- At `step1500`, `core_v3 cleanval` did not outperform `core_v2 cleanval`; it was slightly worse on every key eval metric:
+  - `val/full_l1`: `0.1339 -> 0.1386`
+  - `val/preserve_l1`: `0.0866 -> 0.0900`
+  - `val/edit_l1`: `0.2201 -> 0.2266`
+  - `val/l2`: `0.0410 -> 0.0427`
+  - `val/lpips`: `0.3397 -> 0.3667`
+- Representative training samples also continue to show softness / blur rather than a new qualitative recovery:
+  - [`core_v2 step1500`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_colab_runs/core_v2_cleanval_run_2026-04-05_step1500/nail-retouch-paired-core-v2-cleanval-outputs/samples/train_step_001500.png)
+  - [`core_v3 step1500`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_colab_runs/core_v3_cleanval_run_2026-04-06_step1500/nail-retouch-paired-core-v3-cleanval-outputs/samples/train_step_001500.png)
+- The same strict fixed-pair local validation protocol now also completes for `core_v3 cleanval model_1500`:
+  - pairs: `pair_0005`, `pair_0015`, `pair_0009`, `pair_0040`
+  - outputs: [`outputs/paired_edit_validation_core_v3_cleanval_model1500/model_1500`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_validation_core_v3_cleanval_model1500/model_1500)
+- Fixed-pair readout is consistent with the eval metrics:
+  - `core_v3` outputs are not identical to `core_v2`, but they do not show a new quality tier
+  - the differences look like small shifts within the same soft / blurry regime, not a clear recovery jump
+
+Conclusion:
+
+- The `core_v3 cleanval` ablation is useful closing evidence, but it does not justify continuing deeper into `core_v4`-style dataset-only pruning as a mainline effort.
+- The legacy dataset-only line has now answered its main question:
+  - cleaning the dataset can rescue the route from catastrophic collapse
+  - further small data-only pruning has diminishing returns and did not beat `core_v2 cleanval`
+- The current best interpretation is:
+  - keep `core_v2 cleanval model_1500` as the legacy paired-edit reference checkpoint
+  - treat `core_v3 cleanval` as evidence that the legacy line is near its useful dataset-only ceiling
+  - move the main project priority back to the masked route rather than continuing to deepen the legacy control line.
+
+## 2026-04-06E - Preserve User-Provided Result Zips Inside The Workspace
+
+Hypothesis:
+If all externally supplied result zips are copied into a stable project-side archive with checksums and run mappings, then clearing the system `Download` folder will not break experiment traceability.
+
+Change made:
+
+- Created:
+  - [`archive/2026-04-06_user_result_zips`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips)
+- Copied these user-provided zip files into that archive:
+  - `drive-download-20260404T040859Z-3-001.zip`
+  - `nail-retouch-masked-full12-outputs-20260404T041131Z-3-001.zip`
+  - `nail-retouch-paired-core-v2-cleanval-outputs-20260406T045549Z-3-001.zip`
+  - `nail-retouch-paired-core-v3-cleanval-outputs-20260406T170817Z-3-001.zip`
+- Added an archive manifest:
+  - [`archive/2026-04-06_user_result_zips/README.md`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/README.md)
+
+Result:
+
+- All user-supplied external result bundles now exist inside the workspace archive, independent of `/Volumes/DevSSD/Download`.
+- SHA1 checksums were recorded for all four zip files.
+- The archive manifest also maps the three experiment-result zips to their already-ingested run directories under `outputs/`.
+
+Conclusion:
+
+- The project no longer depends on the `Download` folder for these previously shared result artifacts.
+- It is now safe to clear those source files from `Download` without losing the project-side copies or their provenance.
+
+## 2026-04-06F - Recover Full Masked Validation Coverage By Making The Safety Checker Optional
+
+Hypothesis:
+If the masked validation blackouts on `pair_0040` and `pair_0050` are primarily caused by the diffusion safety checker rather than by the LoRA itself, then a local-eval-only opt-in bypass should recover real outputs for those samples and let us judge `step150` vs `step200` on the full 4-sample validation split.
+
+Change made:
+
+- Reused the Evaluation Agent to judge whether masked-route validation coverage, not a fresh training run, was the current highest-value blocked question.
+- Reused the Training Agent to isolate the blackout source and propose the smallest safe implementation boundary.
+- Added an opt-in `--disable-safety-checker` flag to:
+  - [`src/inference/run_masked_inpaint_validation.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/inference/run_masked_inpaint_validation.py)
+  - [`src/inference/run_masked_inpaint_inference.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/inference/run_masked_inpaint_inference.py)
+- Added [`build_inpaint_pipeline(...)`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/inference/masked_inpaint_utils.py) so the safety checker is disabled only when that flag is explicitly passed; the default inference path stays unchanged.
+- Re-ran the previously safety-unstable validation samples on the archived full-12 masked Colab checkpoints using the restored local inpainting base snapshot:
+  - `step150` outputs:
+    - [`pair_0040`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step150_disable_safety/pytorch_lora_weights_step_000150/pair_0040_sheet.png)
+    - [`pair_0050`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step150_disable_safety/pytorch_lora_weights_step_000150/pair_0050_sheet.png)
+  - `step200` outputs:
+    - [`pair_0040`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step200_disable_safety/pytorch_lora_weights_step_000200/pair_0040_sheet.png)
+    - [`pair_0050`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step200_disable_safety/pytorch_lora_weights_step_000200/pair_0050_sheet.png)
+
+Result:
+
+- The new outputs for `pair_0040` and `pair_0050` are no longer blacked out, which confirms that the earlier local-validation blocker was the safety checker rather than an inability to render those samples at all.
+- Full 4-sample masked validation coverage is now available for the archived run:
+  - `pair_0009`
+  - `pair_0047`
+  - `pair_0040`
+  - `pair_0050`
+- Across those four samples, `step150` remains slightly better than `step200` on every tracked mean metric:
+  - mean `masked_l1_to_target`: `0.1148` vs `0.1150`
+  - mean `masked_delta_e_to_target`: `14.0831` vs `14.0949`
+  - mean `unmasked_l1_to_input`: `0.0357` vs `0.0357` (tie within rounding, with `step150` still marginally lower in raw values)
+  - mean `unmasked_delta_e_to_input`: `4.1891` vs `4.1922`
+  - mean `border_l1_to_target`: `0.0938` vs `0.0939`
+- The recovered hard-case metrics are directionally consistent with the earlier clean-case readout:
+  - `pair_0040`: `step150` is slightly better than `step200`
+  - `pair_0050`: `step150` is slightly better than `step200`
+
+Conclusion:
+
+- The masked-route validation blind spot is now repaired well enough for local checkpoint ranking.
+- The earlier blackouts on `pair_0040` / `pair_0050` should be treated as inference-time safety-checker artifacts, not as evidence that those validation samples were unusable forever.
+- `step150` should remain the default archived full-12 masked checkpoint, with `step200` kept only as a near-neighbor reference.
+- The next masked question should no longer be “can we trust the checkpoint ranking?” but “what is the next single training variable worth changing now that full-val coverage is back?”
+
+## 2026-04-06G - Complete The Archived Full-12 Budget Curve Before Opening A Fresh Masked Retrain
+
+Hypothesis:
+If the next masked training variable is really training budget rather than dataset/task/loss, then the already archived `step050` and `step100` checkpoints should clarify whether the current optimum sits earlier than `step150` without requiring a fresh run.
+
+Change made:
+
+- Reused the Training Agent to rank candidate masked training variables and propose the smallest next experiment boundary.
+- Reused the Evaluation Agent to decide which variable is worth testing first and why other candidates should wait.
+- Both agents converged on the same answer:
+  - the next single variable should be training budget / early stopping position
+  - not dataset membership
+  - not task split
+  - not loss stack
+  - not rank or resolution yet
+- Before opening a new masked retrain, completed the same 4-sample local validation protocol for the two earlier archived checkpoints:
+  - [`step050`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step050_disable_safety/pytorch_lora_weights_step_000050/summary.json)
+  - [`step100`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step100_disable_safety/pytorch_lora_weights_step_000100/summary.json)
+- Compared the full 4-point budget curve on:
+  - `step050`
+  - `step100`
+  - `step150`
+  - `step200`
+  using the same validation pair set:
+  - `pair_0009`
+  - `pair_0040`
+  - `pair_0047`
+  - `pair_0050`
+
+Result:
+
+- The budget curve is now complete on the restored 4-sample local validation split.
+- Mean metrics by checkpoint:
+  - `step050`
+    - `masked_l1_to_target=0.1147`
+    - `masked_delta_e_to_target=14.0787`
+    - `unmasked_l1_to_input=0.0356`
+    - `unmasked_delta_e_to_input=4.1853`
+    - `border_l1_to_target=0.0938`
+  - `step100`
+    - `masked_l1_to_target=0.1147`
+    - `masked_delta_e_to_target=14.0758`
+    - `unmasked_l1_to_input=0.0356`
+    - `unmasked_delta_e_to_input=4.1833`
+    - `border_l1_to_target=0.0938`
+  - `step150`
+    - `masked_l1_to_target=0.1148`
+    - `masked_delta_e_to_target=14.0831`
+    - `unmasked_l1_to_input=0.0357`
+    - `unmasked_delta_e_to_input=4.1891`
+    - `border_l1_to_target=0.0938`
+  - `step200`
+    - `masked_l1_to_target=0.1150`
+    - `masked_delta_e_to_target=14.0949`
+    - `unmasked_l1_to_input=0.0357`
+    - `unmasked_delta_e_to_input=4.1922`
+    - `border_l1_to_target=0.0939`
+- This is not a dramatic separation, but it is directionally consistent:
+  - the earlier checkpoints (`50` / `100`) are slightly better than `150` / `200`
+  - `step100` is the best overall point among the four archived checkpoints
+- The result supports an early-stop interpretation more strongly than a “keep training longer” interpretation.
+
+Conclusion:
+
+- The current best archived full-12 masked checkpoint is now `step100`, not `step150`.
+- The project no longer needs to guess whether training budget is the most important next variable; we now have project-internal evidence that the optimum likely sits closer to `100` steps than to `150` or `200`.
+- The next masked experiment should be a narrower early-stop / budget experiment on faster hardware, not a dataset/task/rank/resolution change.
+- A dedicated Colab config now exists for that next step:
+  - [`colab/masked_inpaint_full12_earlystop_config.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_earlystop_config.yaml)
+  - it keeps dataset, task, prompt, rank, resolution, and losses fixed
+  - it only tightens the budget window to `max_train_steps=150` with `checkpointing_steps=25` / `preview_steps=25`
+- The existing Colab notebook now defaults to that early-stop config:
+  - [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
+  - `CONFIG_FILE` now points to `masked_inpaint_full12_earlystop_config.yaml`, so a fresh clone can run the budget-only refinement without manual notebook edits.
+
 ## Visual Artifacts
 
 - Whitening / blowout: confirmed in historical `model_251` output

@@ -1,0 +1,40 @@
+project_name: nail-retouch-masked-full12-earlystop-v1
+project_root: /content/nail-retouch-assistant
+dataset_dir: dataset/masked_inpaint_cuticle_cleanup_v1
+manifest_path: dataset/annotations/masked_cuticle_cleanup_v1_approved_manifest.json
+raw_dir: raw
+drive_raw_dir: /content/drive/MyDrive/nail-retouch-raw
+drive_dataset_dir: /content/drive/MyDrive/masked_inpaint_cuticle_cleanup_v1_full12
+output_dir: /content/workdir/masked_inpaint/output
+drive_output_dir: /content/drive/MyDrive/nail-retouch-masked-full12-earlystop-outputs
+pretrained_model_name_or_path: stable-diffusion-v1-5/stable-diffusion-inpainting
+rebuild_dataset: true
+sync_built_dataset_to_drive: true
+training:
+  resolution: 512
+  image_prep: resize
+  train_batch_size: 1
+  gradient_accumulation_steps: 1
+  num_train_epochs: 20
+  max_train_steps: 150
+  checkpointing_steps: 25
+  preview_steps: 25
+  validation_samples: 4
+  max_preview_images: 4
+  dataloader_num_workers: 2
+  learning_rate: 1.0e-5
+  lr_scheduler: constant
+  lr_warmup_steps: 0
+  rank: 4
+  lora_dropout: 0.05
+  mixed_precision: fp16
+  gradient_checkpointing: true
+  allow_tf32: true
+  enable_xformers_memory_efficient_attention: false
+  allow_dataset_prompt_variants: false
+  lambda_diffusion: 1.0
+  lambda_mask_rgb: 1.0
+  lambda_identity: 5.0
+  lambda_color: 0.5
+  mask_dilate: 3
+  sync_to_drive_interval_seconds: 120
