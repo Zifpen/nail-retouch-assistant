@@ -1,0 +1,9 @@
+{
+  "default_prompt": "professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, preserve original nail design, natural skin texture, realistic hand photo",
+  "train_ids": [
+    "pair_0022",
+    "pair_0066"
+  ],
+  "val_ids": [],
+  "prompts": {}
+}

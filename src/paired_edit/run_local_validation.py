@@ -15,7 +15,9 @@ import torch
 from PIL import Image, ImageDraw, ImageFont
 
 from pix2pix_runtime import (
+    DEFAULT_UPSTREAM_DIR,
     apply_runtime_checkpoint_patch,
+    clear_device_cache,
     latest_checkpoint,
     load_image_tensor,
     pick_device,
@@ -23,12 +25,13 @@ from pix2pix_runtime import (
     resolve_default_path,
     tensor_to_image,
 )
+from shared_config import DEFAULT_BASELINE_PAIR_IDS, DEFAULT_CORE_DATASET_DIR, PAIRED_EDIT_PROMPT
 
 
 DEFAULT_CHECKPOINT_DIR = Path("outputs/checkpoints")
-DEFAULT_DATASET_DIR = Path("dataset/paired_edit_strict_plus")
+DEFAULT_DATASET_DIR = DEFAULT_CORE_DATASET_DIR
 DEFAULT_OUTPUT_ROOT = Path("outputs/paired_edit_validation")
-DEFAULT_PAIR_IDS = ["pair_0009", "pair_0040", "pair_0047", "pair_0050", "pair_0064"]
+DEFAULT_PAIR_IDS = DEFAULT_BASELINE_PAIR_IDS
 BACKGROUND = (18, 18, 20)
 LABEL_COLOR = (245, 245, 245)
 LABEL_HEIGHT = 42
@@ -77,7 +80,7 @@ def parse_args() -> argparse.Namespace:
         "--pair-id",
         action="append",
         default=[],
-        help="Specific test pair id. Can be passed multiple times. Defaults to the 5 held-out pairs.",
+        help="Specific pair id. Can be passed multiple times. Defaults to the 2-train/2-val baseline set.",
     )
     parser.add_argument(
         "--device",
@@ -85,16 +88,33 @@ def parse_args() -> argparse.Namespace:
         choices=["auto", "cpu", "cuda", "mps"],
         help="Runtime device.",
     )
+    parser.add_argument(
+        "--prompt",
+        default=PAIRED_EDIT_PROMPT,
+        help="Prompt used for validation inference.",
+    )
+    parser.add_argument(
+        "--max-side",
+        type=int,
+        default=None,
+        help="Optional max input side used before inference.",
+    )
     return parser.parse_args()
 
-def load_metadata(metadata_path: Path) -> dict[str, dict]:
+
+def load_metadata(dataset_dir: Path) -> dict[str, dict]:
     rows: dict[str, dict] = {}
-    for line in metadata_path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
+    for metadata_name in ("train_metadata.jsonl", "test_metadata.jsonl"):
+        metadata_path = dataset_dir / metadata_name
+        if not metadata_path.exists():
             continue
-        row = json.loads(line)
-        rows[row["id"]] = row
+        for line in metadata_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            rows[row["id"]] = row
     return rows
+
 
 def build_sheet(input_path: Path, output_path: Path, target_path: Path, sheet_path: Path) -> None:
     images = [
@@ -128,6 +148,16 @@ def build_sheet(input_path: Path, output_path: Path, target_path: Path, sheet_pa
     sheet.save(sheet_path)
 
 
+def validate_prompt_consistency(metadata: dict[str, dict], pair_ids: list[str], prompt: str) -> None:
+    for pair_id in pair_ids:
+        row = metadata[pair_id]
+        row_prompt = row.get("prompt")
+        if row_prompt and row_prompt != prompt:
+            raise ValueError(
+                f"Prompt mismatch for {pair_id}: dataset={row_prompt!r} validation={prompt!r}"
+            )
+
+
 def mirror_output_dir(source_dir: Path, mirror_root: Path | None) -> Path | None:
     if mirror_root is None:
         return None
@@ -143,16 +173,17 @@ def main() -> None:
     args.upstream_dir = resolve_default_path(args.upstream_dir, Path("/tmp/img2img-turbo-local"))
     args.dataset_dir = resolve_default_path(
         args.dataset_dir,
-        Path("/content/nail-retouch-assistant/dataset/paired_edit_strict_plus"),
+        Path("/content/nail-retouch-assistant/dataset/paired_edit_core_v1"),
     )
     args.checkpoint_dir = resolve_default_path(
         args.checkpoint_dir,
-        Path("/content/drive/MyDrive/nail-retouch-paired-outputs/checkpoints"),
+        Path("/content/drive/MyDrive/nail-retouch-paired-core-v1-outputs/checkpoints"),
     )
-    args.output_root = resolve_default_path(
-        args.output_root,
-        Path("/content/workdir/paired_edit/validation"),
-    )
+    if args.output_root == DEFAULT_OUTPUT_ROOT:
+        args.output_root = resolve_default_path(
+            args.output_root,
+            Path("/content/workdir/paired_edit/validation"),
+        )
     if args.mirror_output_root is None and str(args.output_root).startswith("/content/drive/MyDrive/"):
         args.mirror_output_root = Path("/content/workdir/paired_edit/validation")
     device = pick_device(args.device)
@@ -167,12 +198,19 @@ def main() -> None:
     os.environ["PIX2PIX_TURBO_DEVICE"] = device
     from pix2pix_turbo import Pix2Pix_Turbo
 
-    metadata = load_metadata(args.dataset_dir / "test_metadata.jsonl")
+    metadata = load_metadata(args.dataset_dir)
+    missing_pair_ids = [pair_id for pair_id in pair_ids if pair_id not in metadata]
+    if missing_pair_ids:
+        raise KeyError(f"Missing pair ids in dataset metadata: {missing_pair_ids}")
+    validate_prompt_consistency(metadata, pair_ids, args.prompt)
     output_dir = args.output_root / checkpoint.stem
     output_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"Using device: {device}")
     print(f"Checkpoint: {checkpoint}")
+    print(f"Dataset: {args.dataset_dir}")
+    print(f"Prompt: {args.prompt}")
+    clear_device_cache(device)
     model = Pix2Pix_Turbo(pretrained_path=str(checkpoint))
     model.set_eval()
 
@@ -187,24 +225,47 @@ def main() -> None:
         target_path = args.dataset_dir / row["target"]
         output_path = output_dir / f"{pair_id}_output.png"
         sheet_path = output_dir / f"{pair_id}_sheet.png"
+        metadata_path = output_dir / f"{pair_id}_metadata.json"
 
-        x_src = load_image_tensor(input_path, device)
+        clear_device_cache(device)
+        x_src = load_image_tensor(input_path, device, max_side=args.max_side)
         if device == "cuda":
             x_src = x_src.half()
         with torch.no_grad():
-            x_out = model(x_src, prompt=row["prompt"], deterministic=True)
+            x_out = model(x_src, prompt=args.prompt, deterministic=True)
 
         image = tensor_to_image(x_out)
         image.save(output_path)
         build_sheet(input_path, output_path, target_path, sheet_path)
+        metadata_path.write_text(
+            json.dumps(
+                {
+                    "pair_id": pair_id,
+                    "checkpoint": str(checkpoint),
+                    "input": str(input_path),
+                    "target": str(target_path),
+                    "output": str(output_path),
+                    "sheet": str(sheet_path),
+                    "prompt": args.prompt,
+                    "device": device,
+                    "max_side": args.max_side,
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
         print(f"Saved output: {output_path}")
         print(f"Saved sheet: {sheet_path}")
+        print(f"Saved metadata: {metadata_path}")
+        clear_device_cache(device)
 
     summary = {
         "checkpoint": checkpoint.name,
         "device": device,
+        "prompt": args.prompt,
         "pairs": pair_ids,
         "output_dir": str(output_dir),
+        "max_side": args.max_side,
     }
     (output_dir / "validation_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     print(f"Saved summary: {output_dir / 'validation_summary.json'}")

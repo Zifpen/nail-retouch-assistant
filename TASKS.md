@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-04-05
+Last updated: 2026-04-06
 
 ## Completed
 
@@ -47,14 +47,24 @@ Last updated: 2026-04-05
 - [x] Add a dedicated Colab handoff for the guarded `legacy core_v2` retrain with dataset-only changes.
 - [x] Sync the GitHub branch-visible paired trainer CLI with the `core_v2` Colab handoff after Colab exposed a stale-script mismatch.
 - [x] Identify the exact `core_v2` validation outlier blocking the first real Colab retrain and confirm that the failure is `pair_0050` at eval-time `change_ratio=0.6575`.
+- [x] Split `pair_0050` out of the clean `core_v2` validation bucket, build `paired_edit_core_v2_cleanval` / `paired_edit_core_v2_hardval`, and push the matching Colab handoff.
+- [x] Archive the completed `core_v2 cleanval` Colab run locally and confirm that it reached `1500` steps with checkpoints, eval metrics, and sample artifacts.
+- [x] Repair the local paired-edit validation runtime enough to rerun strict fixed-pair checkpoint comparisons.
+- [x] Run strict local validation on `pair_0005`, `pair_0015`, `pair_0009`, and `pair_0040` for `model_1401.pkl` vs clean-val `model_1500.pkl`.
+- [x] Confirm that `model_1500.pkl` improves whitening and color drift relative to `model_1401.pkl`, while still leaving blur / texture loss unresolved.
+- [x] Decide that `pair_0022` and `pair_0066` should leave the legacy clean baseline and move into a temporary secondary set.
+- [x] Build and audit `paired_edit_core_v3`, `paired_edit_core_v3_secondary`, `paired_edit_core_v3_cleanval`, and `paired_edit_core_v3_hardval`.
+- [x] Prepare a dedicated `core_v3 cleanval` Colab config so the next guarded legacy retrain can start from the cleaner split directly.
 
 ## Next Experiments
 
-- [ ] Decide whether `pair_0050` should leave the clean `core_v2` validation split or move into a separate harder validation bucket for the dataset-only legacy baseline.
-- [ ] Retry the guarded `core_v2` retrain after the validation-split decision, with training variables still unchanged.
-- [ ] Run local validation on the same fixed baseline set after the retrain: `pair_0005`, `pair_0015`, `pair_0009`, `pair_0040`.
-- [ ] Compare whether whitening, blue-channel lift, and texture loss fall relative to the old-route artifacts.
-- [ ] Decide whether `pair_0022` and `pair_0066` should stay in `core_v2` or move to a secondary set if preserve-region drift stays high.
+- [x] Decide whether `pair_0050` should leave the clean `core_v2` validation split or move into a separate harder validation bucket for the dataset-only legacy baseline.
+- [x] Retry the guarded `core_v2` retrain after the validation-split decision, with training variables still unchanged.
+- [x] Run local validation on the same fixed baseline set after the retrain: `pair_0005`, `pair_0015`, `pair_0009`, `pair_0040`.
+- [x] Compare whether whitening, blue-channel lift, and texture loss fall relative to the old-route artifacts.
+- [x] Decide whether `pair_0022` and `pair_0066` should stay in `core_v2` or move to a secondary set if preserve-region drift stays high.
+- [ ] Run the next guarded legacy retrain on `dataset/paired_edit_core_v3_cleanval` with no training-variable changes.
+- [ ] Compare the future `core_v3 cleanval` checkpoint against the current `core_v2 cleanval model_1500` baseline on the same fixed validation pair set.
 
 ## Migration Plan
 
@@ -72,4 +82,5 @@ Last updated: 2026-04-05
 - [ ] Evaluate whether mild color normalization of targets is needed after dataset-only filtering.
 - [ ] Consider splitting `proximal_nail_boundary_refinement` and stronger shape-refinement into separate training routes if a filtered dataset still causes coupled failures.
 - [ ] Add a small hard validation set from `hard_val_optional` after the core route stops collapsing on easy pairs.
-- [ ] Consider a `core_v3` legacy manifest if `pair_0022`, `pair_0066`, and `pair_0035` still dominate preserve-region drift after the `core_v2` retrain.
+- [x] Consider a `core_v3` legacy manifest if `pair_0022`, `pair_0066`, and `pair_0035` still dominate preserve-region drift after the `core_v2` retrain.
+- [ ] Revisit whether `pair_0035` should join a later secondary legacy bucket if `core_v3 cleanval` still looks too soft.

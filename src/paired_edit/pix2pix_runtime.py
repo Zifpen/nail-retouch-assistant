@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import os
 import sys
+import uuid
 from pathlib import Path
 
 import numpy as np
@@ -34,6 +36,14 @@ def pick_device(name: str) -> str:
     return "cpu"
 
 
+def clear_device_cache(device: str) -> None:
+    if device == "cuda" and torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        return
+    if device == "mps" and hasattr(torch, "mps") and hasattr(torch.mps, "empty_cache"):
+        torch.mps.empty_cache()
+
+
 def latest_checkpoint(checkpoint_dir: Path) -> Path:
     candidates = sorted(
         checkpoint_dir.glob("model_*.pkl"),
@@ -44,43 +54,67 @@ def latest_checkpoint(checkpoint_dir: Path) -> Path:
     return candidates[-1]
 
 
+def _remove_path(path: Path) -> None:
+    if path.is_symlink() or path.is_file():
+        path.unlink(missing_ok=True)
+    elif path.exists():
+        shutil.rmtree(path, ignore_errors=True)
+
+
 def prepare_runtime_upstream(upstream_dir: Path, device: str) -> Path:
-    if not upstream_dir.exists():
+    upstream_src = upstream_dir / "src"
+    if not upstream_src.exists() or not upstream_src.is_dir():
         raise FileNotFoundError(
-            f"Upstream repo not found at {upstream_dir}. Clone https://github.com/GaParmar/img2img-turbo there first."
+            f"Upstream repo src not found at {upstream_src}. Clone https://github.com/GaParmar/img2img-turbo there first."
         )
 
     runtime_root = Path("/tmp/img2img-turbo-runtime") / device
-    if runtime_root.exists():
-        shutil.rmtree(runtime_root)
-    shutil.copytree(upstream_dir / "src", runtime_root / "src")
+    runtime_parent = runtime_root.parent
+    runtime_parent.mkdir(parents=True, exist_ok=True)
+    lock_path = runtime_parent / f".{runtime_root.name}.lock"
+    staging_root = runtime_parent / f"{runtime_root.name}.staging-{os.getpid()}-{uuid.uuid4().hex}"
+    _remove_path(staging_root)
 
-    replacements = {
-        '.cuda()': '.to(DEVICE)',
-        'device="cuda"': 'device=DEVICE',
-        "device='cuda'": "device=DEVICE",
-        '.to("cuda")': '.to(DEVICE)',
-        ".to('cuda')": ".to(DEVICE)",
-    }
-    for rel in ("src/pix2pix_turbo.py", "src/model.py"):
-        path = runtime_root / rel
-        text = path.read_text(encoding="utf-8")
-        if 'DEVICE = os.environ.get("PIX2PIX_TURBO_DEVICE", "cuda")' not in text:
-            if "import torch\n" in text:
-                text = text.replace(
-                    "import torch\n",
-                    'import torch\nDEVICE = os.environ.get("PIX2PIX_TURBO_DEVICE", "cuda")\n',
-                    1,
-                )
-            else:
-                text = text.replace(
-                    "from tqdm import tqdm\n",
-                    'from tqdm import tqdm\nDEVICE = os.environ.get("PIX2PIX_TURBO_DEVICE", "cuda")\n',
-                    1,
-                )
-        for old, new in replacements.items():
-            text = text.replace(old, new)
-        path.write_text(text, encoding="utf-8")
+    import fcntl
+
+    with open(lock_path, "w", encoding="utf-8") as lock_file:
+        fcntl.flock(lock_file, fcntl.LOCK_EX)
+        try:
+            _remove_path(staging_root)
+            shutil.copytree(upstream_src, staging_root / "src")
+
+            replacements = {
+                ".cuda()": ".to(DEVICE)",
+                'device="cuda"': "device=DEVICE",
+                "device='cuda'": "device=DEVICE",
+                '.to("cuda")': ".to(DEVICE)",
+                ".to('cuda')": ".to(DEVICE)",
+            }
+            for rel in ("src/pix2pix_turbo.py", "src/model.py"):
+                path = staging_root / rel
+                text = path.read_text(encoding="utf-8")
+                if 'DEVICE = os.environ.get("PIX2PIX_TURBO_DEVICE", "cuda")' not in text:
+                    if "import torch\n" in text:
+                        text = text.replace(
+                            "import torch\n",
+                            'import torch\nDEVICE = os.environ.get("PIX2PIX_TURBO_DEVICE", "cuda")\n',
+                            1,
+                        )
+                    else:
+                        text = text.replace(
+                            "from tqdm import tqdm\n",
+                            'from tqdm import tqdm\nDEVICE = os.environ.get("PIX2PIX_TURBO_DEVICE", "cuda")\n',
+                            1,
+                        )
+                for old, new in replacements.items():
+                    text = text.replace(old, new)
+                path.write_text(text, encoding="utf-8")
+
+            _remove_path(runtime_root)
+            staging_root.rename(runtime_root)
+        finally:
+            if staging_root.exists():
+                _remove_path(staging_root)
 
     return runtime_root
 

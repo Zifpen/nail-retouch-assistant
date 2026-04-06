@@ -1,0 +1,41 @@
+project_name: nail-retouch-paired-core-v3-guarded
+project_root: /content/nail-retouch-assistant
+train_workdir: /content/nail-retouch-assistant
+train_script: src/paired_edit/train_supervised_retouch.py
+dataset_dir: dataset/paired_edit_core_v3
+repo_url: https://github.com/GaParmar/img2img-turbo.git
+repo_dir: /content/img2img-turbo
+upstream_src_dir: /content/img2img-turbo/src
+drive_dataset_dir: /content/drive/MyDrive/paired_edit_core_v3
+prepared_workdir: /content/workdir/paired_edit_core_v3
+output_dir: /content/workdir/paired_edit_core_v3/output
+drive_output_dir: /content/drive/MyDrive/nail-retouch-paired-core-v3-outputs
+pretrained_model_name_or_path: stabilityai/sd-turbo
+paired_prompt: "professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, preserve original nail design, natural skin texture, realistic hand photo"
+training:
+  resolution: 256
+  train_image_prep: resize_256
+  test_image_prep: resize_256
+  train_batch_size: 1
+  learning_rate: 5.0e-6
+  num_training_epochs: 120
+  max_train_steps: 1500
+  viz_freq: 50
+  eval_freq: 100
+  checkpointing_steps: 100
+  sync_to_drive_interval_seconds: 120
+  auto_resume_from_drive: true
+  mixed_precision: "no"
+  gradient_checkpointing: true
+  allow_tf32: true
+  enable_xformers_memory_efficient_attention: true
+  track_val_fid: false
+  lambda_full_l1: 1.0
+  lambda_preserve: 2.0
+  lambda_edit: 2.0
+  lambda_gan: 0.0
+  lambda_clipsim: 0.0
+  lambda_lpips: 0.5
+  lambda_l2: 0.0
+  change_mask_threshold: 0.12
+  change_mask_dilate: 3

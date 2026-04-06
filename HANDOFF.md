@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-04-05
+Last updated: 2026-04-06
 
 ## What Was Tested
 
@@ -351,6 +351,104 @@ python3 src/training/train_masked_inpaint_lora.py \
 - The next session should keep the experiment dataset-only and decide one data-side action:
   - remove `pair_0050` from the clean local-edit validation split for `core_v2`, or
   - move it to a separate harder validation bucket
+- That split decision has now been executed:
+  - clean validation dataset:
+    - [`dataset/paired_edit_core_v2_cleanval`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/paired_edit_core_v2_cleanval)
+    - val ids: `pair_0009`, `pair_0040`, `pair_0047`, `pair_0064`
+  - harder validation dataset:
+    - [`dataset/paired_edit_core_v2_hardval`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/paired_edit_core_v2_hardval)
+    - val ids: `pair_0050`
+- The clean-val Colab retrain has now completed and been archived locally at:
+  - [`outputs/paired_edit_colab_runs/core_v2_cleanval_run_2026-04-05_step1500/nail-retouch-paired-core-v2-cleanval-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_colab_runs/core_v2_cleanval_run_2026-04-05_step1500/nail-retouch-paired-core-v2-cleanval-outputs)
+- Clean-val run readout:
+  - reached `1500` steps
+  - wrote checkpoints through `model_1500.pkl`
+  - wrote eval metrics through `metrics_001500.json`
+  - wrote training samples through `train_step_001500.png`
+  - stayed on the guarded config except for the dataset path / split artifact
+- Current interpretation of that archived run:
+  - definitely better than the old catastrophic white-collapse regime
+  - also better on obvious global red / magenta drift
+  - still visibly soft / blurry, so not a complete recovery of the legacy route
+- Current local validation blocker for the next legacy comparison:
+  - not the clean-val checkpoint itself
+  - the local paired-edit validation environment
+  - specifically, the old local upstream stub at `/tmp/img2img-turbo-local/src` was incomplete
+  - a full clone now exists at [`/tmp/img2img-turbo-local-full`](/tmp/img2img-turbo-local-full), but the temporary runtime preparation remained environment-fragile in this round
+- Highest-value next legacy task:
+  - finish the strict side-by-side local validation comparison:
+    - [`outputs/checkpoints/model_1401.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/checkpoints/model_1401.pkl)
+    - vs [`outputs/paired_edit_colab_runs/core_v2_cleanval_run_2026-04-05_step1500/nail-retouch-paired-core-v2-cleanval-outputs/checkpoints/model_1500.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_colab_runs/core_v2_cleanval_run_2026-04-05_step1500/nail-retouch-paired-core-v2-cleanval-outputs/checkpoints/model_1500.pkl)
+  - fixed pair set:
+    - `pair_0005`
+    - `pair_0015`
+    - `pair_0009`
+    - `pair_0040`
+- That strict comparison has now completed locally after repairing the runtime helper.
+- Runtime/tooling note:
+  - [`src/paired_edit/pix2pix_runtime.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/paired_edit/pix2pix_runtime.py) was hardened so local validation no longer depends on fragile half-built `/tmp/img2img-turbo-runtime/<device>` directories.
+  - a complete upstream clone is now available at [`/tmp/img2img-turbo-local-full`](/tmp/img2img-turbo-local-full)
+- Comparison output roots:
+  - old baseline:
+    - [`outputs/paired_edit_validation_core_v2_cleanval_baseline1401/model_1401`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_validation_core_v2_cleanval_baseline1401/model_1401)
+  - clean-val checkpoint:
+    - [`outputs/paired_edit_validation_core_v2_cleanval_model1500/model_1500`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_validation_core_v2_cleanval_model1500/model_1500)
+- Comparison conclusion:
+  - `model_1500` is clearly better than `model_1401` on the fixed pair set
+  - the biggest gains are:
+    - less catastrophic whitening
+    - less magenta / red global drift
+  - the main unresolved weakness is:
+    - blur / texture softness
+- Practical legacy baseline update:
+  - treat [`outputs/paired_edit_colab_runs/core_v2_cleanval_run_2026-04-05_step1500/nail-retouch-paired-core-v2-cleanval-outputs/checkpoints/model_1500.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_colab_runs/core_v2_cleanval_run_2026-04-05_step1500/nail-retouch-paired-core-v2-cleanval-outputs/checkpoints/model_1500.pkl) as the current best legacy paired-edit checkpoint
+  - keep [`outputs/checkpoints/model_1401.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/checkpoints/model_1401.pkl) only as the old baseline reference
+- The next legacy decision is now narrower:
+  - decide whether `pair_0022` and `pair_0066` should remain in `core_v2`
+  - rationale: collapse is no longer the primary problem, so the next likely dominant issue is residual drift / softness from second-tier hard pairs
+- That decision has now been made:
+  - move `pair_0022` and `pair_0066` out of the legacy clean baseline
+  - keep them in a secondary bucket instead of deleting them from the project
+- New legacy candidate datasets now exist:
+  - clean baseline candidate:
+    - [`dataset/paired_edit_core_v3_cleanval`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/paired_edit_core_v3_cleanval)
+    - `23 train / 4 val`
+    - val ids: `pair_0009`, `pair_0040`, `pair_0047`, `pair_0064`
+  - hard validation bucket:
+    - [`dataset/paired_edit_core_v3_hardval`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/paired_edit_core_v3_hardval)
+    - `23 train / 1 val`
+    - val id: `pair_0050`
+  - secondary drift bucket:
+    - [`dataset/paired_edit_core_v3_secondary`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/paired_edit_core_v3_secondary)
+    - train ids: `pair_0022`, `pair_0066`
+- Supporting manifests:
+  - [`dataset/annotations/paired_edit_core_v3_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/paired_edit_core_v3_manifest.json)
+  - [`dataset/annotations/paired_edit_core_v3_secondary_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/paired_edit_core_v3_secondary_manifest.json)
+  - [`dataset/annotations/paired_edit_core_v3_cleanval_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/paired_edit_core_v3_cleanval_manifest.json)
+  - [`dataset/annotations/paired_edit_core_v3_hardval_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/paired_edit_core_v3_hardval_manifest.json)
+- Colab handoff entry for the next retrain:
+  - notebook:
+    - [`colab/train_paired_edit_core_v3_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_paired_edit_core_v3_v1.ipynb)
+  - cleanval config:
+    - [`colab/paired_edit_core_v3_cleanval_config.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/paired_edit_core_v3_cleanval_config.yaml)
+  - expected Drive dataset path:
+    - `/content/drive/MyDrive/paired_edit_core_v3_cleanval`
+  - expected Drive output path:
+    - `/content/drive/MyDrive/nail-retouch-paired-core-v3-cleanval-outputs`
+- Audit readout after the split:
+  - `core_v2` mean drift score: `0.1377`
+  - `core_v3` mean drift score: `0.1224`
+  - `core_v3_cleanval` mean drift score: `0.1162`
+- Why `pair_0022` / `pair_0066` were split:
+  - they remained the top two train-side residual drift pairs after the `core_v2 cleanval` retrain
+  - both show broad whole-hand lift / smoothing, not just local retouch behavior
+  - `pair_0022` is the riskier one of the two
+- Current interpretation:
+  - this is a justified data-side tightening step, not yet proof that these two were the only cause of residual softness
+  - the next real answer must come from a controlled retrain, not from more eyeballing alone
+- Highest-value next legacy task is now updated:
+  - run the guarded dataset-only retrain on [`dataset/paired_edit_core_v3_cleanval`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/paired_edit_core_v3_cleanval)
+  - then compare its checkpoint against the current `core_v2 cleanval model_1500` baseline on the same fixed validation pairs
 - Legacy comparison protocol is prepared:
   - baseline pair ids: `pair_0005`, `pair_0015`, `pair_0009`, `pair_0040`
   - compare new `core_v2` checkpoint against [`outputs/checkpoints/model_1401.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/checkpoints/model_1401.pkl)

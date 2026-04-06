@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-04-05
+Last updated: 2026-04-06
 
 ## 2026-03-30 - Treat Dataset Drift As The Primary Failure Mode
 
@@ -527,3 +527,63 @@ Implication:
 - The next legacy decision should be whether to:
   - remove `pair_0050` from the clean validation holdout for this experiment, or
   - move it into a separate harder validation bucket.
+
+## 2026-04-06 - Treat The `core_v2` Cleanval Retrain As A Partial Legacy Recovery, Not A Full Fix
+
+Decision:
+Interpret the archived `core_v2 cleanval` retrain as evidence that dataset filtering helps the legacy route, but do not treat it as proof that the legacy paired-edit baseline is now fully acceptable.
+
+Why:
+
+- The clean-val run completed the full guarded schedule to `1500` steps without the earlier eval-split blocker.
+- Its archived metrics and sample trajectory show clear improvement over the historical collapse regime:
+  - much less whole-image whitening
+  - less severe red / magenta color drift
+- However, the later training samples still show softness / blur and incomplete texture recovery, so the route has improved but not fully recovered.
+
+Implication:
+
+- Record the clean-val split as a useful legacy control improvement, not as an endpoint.
+- Keep the next legacy comparison single-variable:
+  - compare `model_1401.pkl` against clean-val `model_1500.pkl` on the fixed baseline pairs
+- Do not respond to the remaining blur by immediately changing prompt, loss, or resolution in the same round.
+
+## 2026-04-06 - Accept `core_v2 cleanval model_1500` As The New Legacy Baseline Reference
+
+Decision:
+Use `core_v2 cleanval model_1500.pkl` as the current legacy paired-edit reference checkpoint instead of `model_1401.pkl`.
+
+Why:
+
+- The strict fixed-pair comparison now completed locally on `pair_0005`, `pair_0015`, `pair_0009`, and `pair_0040`.
+- Across that shared comparison set, `model_1500.pkl` is consistently less whitened and less magenta-shifted than `model_1401.pkl`.
+- The new checkpoint is still blurry, but it is no longer in the same catastrophic collapse regime as the old baseline.
+
+Implication:
+
+- When discussing the current best-case legacy route, reference:
+  - [`outputs/paired_edit_colab_runs/core_v2_cleanval_run_2026-04-05_step1500/nail-retouch-paired-core-v2-cleanval-outputs/checkpoints/model_1500.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/paired_edit_colab_runs/core_v2_cleanval_run_2026-04-05_step1500/nail-retouch-paired-core-v2-cleanval-outputs/checkpoints/model_1500.pkl)
+- Treat the next legacy question as:
+  - whether secondary drift pairs such as `pair_0022` and `pair_0066` are now the main remaining reason the route still looks soft
+- Do not reopen the old `model_1401` checkpoint as the preferred legacy baseline unless a later controlled comparison reverses this result.
+
+## 2026-04-06 - Move `pair_0022` And `pair_0066` Out Of The Legacy Clean Baseline
+
+Decision:
+Treat `pair_0022` and `pair_0066` as secondary-set legacy samples instead of keeping them inside the default clean training pool.
+
+Why:
+
+- After the `core_v2 cleanval` retrain, collapse is no longer the dominant legacy failure mode; residual blur / softness is now the main issue.
+- `pair_0022` and `pair_0066` remained the top two train-side drift pairs in `core_v2` with large positive luma lift and large change-area ratios.
+- Their before/after sheets also show broad hand-wide brightening / smoothing behavior that does not match the cleanest local-retouch baseline we want the next dataset-only experiment to represent.
+- Removing just these two lowers the mean drift score from `0.1377` in `core_v2` to `0.1224` in `core_v3`, and to `0.1162` in `core_v3_cleanval`.
+
+Implication:
+
+- Use `core_v3_cleanval` as the next legacy clean-baseline retrain candidate, not `core_v2_cleanval`.
+- Keep `pair_0022` and `pair_0066` available in [`dataset/paired_edit_core_v3_secondary`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/paired_edit_core_v3_secondary) instead of pretending they were invalid forever.
+- Keep the next experiment single-variable:
+  - guarded retrain on `core_v3_cleanval`
+  - compare against the existing `core_v2 cleanval model_1500` baseline
+  - do not simultaneously change prompt, loss, rank, or resolution.
