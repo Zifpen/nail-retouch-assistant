@@ -548,6 +548,94 @@ python3 src/training/train_masked_inpaint_lora.py \
   - it explicitly validates `build_summary.json`, `train/metadata.jsonl`, and `val/metadata.jsonl` under `/content/drive/MyDrive/masked_inpaint_cuticle_cleanup_v1_full12`
   - it prints Drive existence / child diagnostics before attempting raw-pair fallback
   - this should prevent a valid cached full-12 dataset from being mistaken for a missing-input situation
+- The masked full-12 early-stop Colab result is now archived locally in both forms:
+  - raw zip:
+    - [`archive/2026-04-06_user_result_zips/nail-retouch-masked-full12-earlystop-outputs-20260406T191151Z-3-001.zip`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/nail-retouch-masked-full12-earlystop-outputs-20260406T191151Z-3-001.zip)
+  - extracted run:
+    - [`outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs)
+  - extracted contents:
+    - checkpoints at `25 / 50 / 75 / 100 / 125 / 150`
+    - previews at `25 / 50 / 75 / 100 / 125 / 150`
+    - `metrics.jsonl`
+    - `training_config.json`
+- Archive habit is now explicit project policy:
+  - when the user sends an external result zip, archive it immediately
+  - preserve both the raw zip and the extracted stable run
+  - do this before further analysis and before any `Download` cleanup
+- Validation-tool alignment update:
+  - [`src/inference/masked_inpaint_utils.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/inference/masked_inpaint_utils.py) now resizes ROI-generated crops back to the source crop size before exact outside-mask compositing when the diffusion pipeline returns an off-size crop
+  - this fixes the earlier `Base image, edited image, and mask must have identical sizes for compositing` failure on some early-stop checkpoints
+  - treat this as a validation robustness fix, not as a model-side training change
+- Early-stop run ranking under the patched protocol:
+  - `step025`: `masked_l1 0.06630`, `masked_delta_e 8.74055`, `border_l1 0.02840`
+  - `step050`: `masked_l1 0.06606`, `masked_delta_e 8.69487`, `border_l1 0.02835`
+  - `step075`: `masked_l1 0.06582`, `masked_delta_e 8.64918`, `border_l1 0.02831`
+  - `step100`: `masked_l1 0.06560`, `masked_delta_e 8.60186`, `border_l1 0.02828`
+  - `step125`: `masked_l1 0.06543`, `masked_delta_e 8.56099`, `border_l1 0.02829`
+  - `step150`: `masked_l1 0.06538`, `masked_delta_e 8.53859`, `border_l1 0.02836`
+  - all six checkpoints now report exact outside-mask preservation under this protocol:
+    - `mean_unmasked_l1_to_input = 0`
+    - `mean_unmasked_delta_e_to_input = 0`
+- Old archived baseline re-run under the same patched protocol:
+  - [`outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step100_disable_safety_rerun/pytorch_lora_weights_step_000100/summary.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step100_disable_safety_rerun/pytorch_lora_weights_step_000100/summary.json)
+  - old archived `step100` re-run metrics:
+    - `masked_l1 0.06558`
+    - `masked_delta_e 8.60673`
+    - `border_l1 0.02829`
+- Additional old archived checkpoints now re-run under the same patched protocol:
+  - [`outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step150_disable_safety_rerun/pytorch_lora_weights_step_000150/summary.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step150_disable_safety_rerun/pytorch_lora_weights_step_000150/summary.json)
+  - [`outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step200_disable_safety_rerun/pytorch_lora_weights_step_000200/summary.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step200_disable_safety_rerun/pytorch_lora_weights_step_000200/summary.json)
+  - old archived `step150` re-run metrics:
+    - `masked_l1 0.065375`
+    - `masked_delta_e 8.537905`
+    - `border_l1 0.028373`
+  - old archived `step200` re-run metrics:
+    - `masked_l1 0.065640`
+    - `masked_delta_e 8.552402`
+    - `border_l1 0.028603`
+- Current masked checkpoint readout:
+  - best current masked reference:
+    - [`outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors)
+  - nearest neighbor:
+    - [`outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs/lora_checkpoints/pytorch_lora_weights_step_000125.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs/lora_checkpoints/pytorch_lora_weights_step_000125.safetensors)
+  - full patched-protocol readout:
+    - `150` is the stable best-step region
+    - `125` is the nearest earlier neighbor
+    - `200` is slightly worse than `150`
+    - `100` is slightly early
+    - old archived `step150` and dedicated early-stop `step150` are effectively tied
+  - practical implication:
+    - the budget question is closed for the current full-12 setup
+    - the next masked experiment should change a new single variable instead of reopening budget
+- The next masked single variable is now explicitly chosen:
+  - `lambda_color`
+  - not `lambda_identity`
+  - not `rank`
+  - not `resolution`
+- Why `lambda_color` was chosen:
+  - both the reused Evaluation Agent and Training Agent ranked it as the cleanest next variable
+  - it directly probes a product-relevant symptom cluster: color drift, red/purple tinting, and local color consistency
+  - it keeps compute and convergence conditions almost identical to the current early-stop baseline
+- The dedicated next-run Colab config now exists:
+  - [`colab/masked_inpaint_full12_lambda_color_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_lambda_color_v1.yaml)
+  - only intentional training change relative to the current early-stop config:
+    - `lambda_color: 0.5 -> 1.0`
+  - all other important settings remain fixed:
+    - full-12 dataset
+    - approved manifest
+    - `max_train_steps=150`
+    - `checkpointing_steps=25`
+    - `preview_steps=25`
+    - `resolution=512`
+    - `rank=4`
+    - `lambda_identity=5.0`
+- Fresh-clone notebook default is now aligned to that next experiment:
+  - [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
+  - default `CONFIG_FILE` now points at `masked_inpaint_full12_lambda_color_v1.yaml`
+- Practical next step for the user:
+  - fresh clone branch `codex/masked-full12-colab`
+  - run the masked full-12 notebook without manually editing `CONFIG_FILE`
+  - upload / point to the same cached full-12 dataset at `/content/drive/MyDrive/masked_inpaint_cuticle_cleanup_v1_full12`
 - Legacy comparison protocol is prepared:
   - baseline pair ids: `pair_0005`, `pair_0015`, `pair_0009`, `pair_0040`
   - compare new `core_v2` checkpoint against [`outputs/checkpoints/model_1401.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/checkpoints/model_1401.pkl)

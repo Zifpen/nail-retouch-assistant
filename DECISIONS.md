@@ -647,3 +647,89 @@ Implication:
 - Keep `step150` as the nearest fallback / comparison point rather than the primary candidate.
 - Define the next masked training experiment as a budget-only early-stop refinement on faster hardware, with dataset, task, prompt, loss, rank, and resolution unchanged.
 - Do not spend the next round changing rank or resolution until the early-stop question is deliberately tightened or falsified.
+
+## 2026-04-06 - Archive Every User-Provided External Result Bundle Before Any Cleanup
+
+Decision:
+Whenever the user provides an external result zip from Colab or another machine, first archive the raw bundle inside the workspace and then extract it into a stable run directory before relying on it for evaluation or allowing local cleanup.
+
+Why:
+
+- The project now depends on multiple externally produced training bundles for both masked and legacy comparisons.
+- System download folders are transient and easy to clear.
+- Keeping both the raw zip and the extracted run preserves reproducibility, traceability, and future re-analysis.
+
+Implication:
+
+- Use [`archive/2026-04-06_user_result_zips`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips) as the default raw landing zone for user-provided result bundles.
+- Also map each archived bundle to a stable extracted directory under `outputs/`.
+- Treat result archiving as part of project memory hygiene, not as an optional convenience step.
+
+## 2026-04-06 - Treat The Patched Exact-Composite Validation Protocol As The Current Masked Local Ranking Baseline
+
+Decision:
+Use the patched ROI exact-composite validation protocol as the current masked local ranking baseline, and do not mix pre-patch and post-patch masked validation metrics in one checkpoint ranking table.
+
+Why:
+
+- The early-stop run exposed a validation-tool failure where ROI inpaint crops could come back at a size different from the source crop, causing exact compositing to fail.
+- After normalizing generated ROI size before compositing, the same checkpoints validated cleanly and outside-mask preservation correctly collapsed to exact-zero error.
+- That means the pre-patch and post-patch preserve metrics are not directly comparable; mixing them would confuse evaluation-implementation differences with real checkpoint quality differences.
+
+Implication:
+
+- When comparing masked checkpoints going forward, prefer the patched local validation outputs.
+- Re-run older checkpoint references under the patched protocol before using them as direct baselines against newly evaluated runs.
+- Treat the current exact-preserve local validation outputs as the authoritative masked ranking evidence.
+
+## 2026-04-06 - Promote Early-Stop `step150` To The Current Masked Reference, With `step125` As The Near Neighbor
+
+Decision:
+Promote the archived early-stop run's `step150` checkpoint to the current masked reference checkpoint, and keep `step125` as the nearest comparison / rollback neighbor.
+
+Why:
+
+- Within the patched and internally consistent early-stop budget curve, edit-side metrics improve monotonically from `step025` through `step150`.
+- `step150` is the best point on `masked_l1_to_target` and `masked_delta_e_to_target`.
+- Compared against the older archived full-12 `step100` re-run under the same patched validation protocol, early-stop `step150` is still slightly better on masked edit quality, even though the margin is modest.
+
+Implication:
+
+- Treat [`outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors) as the current masked reference checkpoint.
+- Keep [`outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs/lora_checkpoints/pytorch_lora_weights_step_000125.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs/lora_checkpoints/pytorch_lora_weights_step_000125.safetensors) as the nearest low-risk neighbor.
+- The next masked experiment should move to a new single variable instead of continuing to re-open the budget-only question on this same 12-sample set.
+
+## 2026-04-09 - Close The Current Masked Budget Question And Move To A New Single Variable
+
+Decision:
+Treat the current full-12 masked budget question as closed: the useful optimum is at `step150`, with `step125` as the nearest earlier neighbor and `step200` already beyond the optimum.
+
+Why:
+
+- After re-running old archived `step100`, `step150`, and `step200` under the same patched validation protocol, the ranking is now consistent across both the old archived run and the dedicated early-stop run.
+- `step150` remains the best region across both runs, while `step200` is slightly worse and `step100` is slightly early.
+- The two `step150` checkpoints are effectively tied, so further budget-only iteration on this same 12-sample setup is unlikely to produce a meaningfully more informative answer.
+
+Implication:
+
+- Keep the dedicated early-stop run `step150` as the practical masked reference checkpoint.
+- Keep early-stop `step125` as the nearest rollback / comparison point.
+- The next masked experiment must change a different single variable, not budget.
+
+## 2026-04-09 - Make `lambda_color` The Next Masked Single-Variable Experiment
+
+Decision:
+After closing the full-12 masked budget question, make `lambda_color` the next masked single variable, using a dedicated `lambda_color=1.0` Colab handoff while keeping all other training and validation settings fixed.
+
+Why:
+
+- The budget question is already closed well enough on the current full-12 setup, so reopening steps would add little information.
+- Both the reused Evaluation Agent and Training Agent independently ranked `lambda_color` above `lambda_identity`, `rank`, and `resolution`.
+- `lambda_color` is the cheapest next probe that still targets a product-relevant failure mode: color drift, red/purple tinting, and local color inconsistency inside the edit region.
+- Changing rank or resolution next would confound compute, convergence, and capacity at the same time.
+
+Implication:
+
+- Use [`colab/masked_inpaint_full12_lambda_color_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_lambda_color_v1.yaml) as the next masked Colab config.
+- Keep dataset, manifest, prompt behavior, rank, resolution, learning rate, and `step150` budget fixed.
+- Treat the result as a color-loss ablation against the current masked `step150` reference, not as a new broad training regime.

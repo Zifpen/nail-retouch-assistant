@@ -59,6 +59,13 @@ Last updated: 2026-04-06
 - [x] Run strict local validation on the same fixed baseline set for `core_v3 cleanval model_1500`.
 - [x] Copy all user-provided external result zips into a workspace archive before clearing the system `Download` folder.
 - [x] Recover full 4-sample masked validation coverage by making the local safety-checker bypass explicitly opt-in, then re-compare `step150` vs `step200` on `pair_0040` and `pair_0050`.
+- [x] Archive the masked full-12 early-stop Colab output zip locally in both raw and extracted form before clearing transient downloads.
+- [x] Patch masked ROI validation compositing so off-size generated crops are normalized before exact outside-mask compositing.
+- [x] Re-run the archived masked early-stop checkpoints on one consistent patched local validation protocol.
+- [x] Re-run the older archived full-12 `step100` checkpoint under the same patched local validation protocol for direct comparison.
+- [x] Re-run the older archived full-12 `step150` and `step200` checkpoints under the same patched local validation protocol to close the current masked budget curve.
+- [x] Decide the next masked single-variable experiment now that the budget-only question is closed and `step150` is the stable best-step region for the current full-12 setup.
+- [x] Prepare a direct Colab handoff for the next masked `lambda_color` ablation.
 
 ## Next Experiments
 
@@ -81,6 +88,10 @@ Last updated: 2026-04-06
 - [ ] Decide whether the full 12-sample approved masked dataset should now replace the previous 10-sample subset as the default long-run training set in project messaging and downstream configs.
 - [ ] Move the current full 12-sample approved masked subset onto faster hardware or Colab for the first more informative GPU-side masked run beyond local CPU dry-runs.
 - [ ] Run a budget-only masked early-stop refinement on faster hardware, keeping the full-12 dataset and all other training variables fixed while tightening the useful checkpoint region around `step100`.
+- [ ] Evaluate the archived masked full-12 early-stop run on the same 4-sample local validation protocol used for the earlier `step050 / 100 / 150 / 200` ranking, and decide whether it sharpens or overturns the current `step100` preference.
+- [x] Evaluate the archived masked full-12 early-stop run on one internally consistent 4-sample local validation protocol, and decide whether it sharpens or overturns the current `step100` preference.
+- [ ] Run the next masked Colab experiment with only `lambda_color` changed from `0.5` to `1.0`, keeping the full-12 dataset and current `step150` budget fixed.
+- [ ] Compare the resulting checkpoints against the current masked reference on the same patched 4-sample local validation protocol.
 - [x] Prepare a dedicated Colab config for the full-12 masked early-stop refinement experiment.
 - [x] Update the existing masked full-12 Colab notebook so a fresh clone defaults to the early-stop config without manual notebook edits.
 - [x] Harden the masked full-12 early-stop Colab notebook so it explicitly accepts a correctly uploaded cached Drive dataset before falling back to raw-pair discovery.

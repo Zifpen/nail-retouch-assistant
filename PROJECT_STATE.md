@@ -1714,3 +1714,167 @@ Conclusion:
 - Even the previously highest-risk remaining seed-pack samples can still fit `proximal_nail_boundary_refinement` if the authored masks stay genuinely local and avoid absorbing decoration or lighting-driven appearance changes.
 - Once `pair_0047` and `pair_0050` are promoted, the full first seed pack still behaves like a training-safe masked dataset in local smoke-scale runs; the new question becomes compute budget, not whether those samples were a mistake to include.
 - For Colab handoff, notebook brittleness around Drive paths can masquerade as a training blocker; keep the data-prep fallback chain robust so environment quirks do not get confused with modeling regressions.
+- Externally produced result bundles should be archived immediately in both raw and extracted form; otherwise later cleanup of `Download` can silently remove reproducibility-critical artifacts.
+
+### Experiment 2026-04-06H - Archive The Full-12 Early-Stop Masked Colab Result Before Any Download Cleanup
+
+Hypothesis:
+If each user-provided external result bundle is copied into the workspace archive and extracted into a stable run directory as soon as it arrives, we can safely clear transient download folders without losing later evaluation context.
+
+Change made:
+
+- Copied [`nail-retouch-masked-full12-earlystop-outputs-20260406T191151Z-3-001.zip`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/nail-retouch-masked-full12-earlystop-outputs-20260406T191151Z-3-001.zip) into the workspace archive
+- Extracted the run into [`outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_earlystop_run_2026-04-06_step150/nail-retouch-masked-full12-earlystop-outputs)
+- Added the bundle-to-run mapping and checksum to [`archive/2026-04-06_user_result_zips/README.md`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/README.md)
+
+Result:
+
+- The raw zip is now preserved in-project with SHA256 `670b06fc5efd120ff020268a1ff51c306bb1b3755c840640e56b8e778c74ce58`
+- The extracted run now has stable local paths for:
+  - `metrics.jsonl`
+  - `training_config.json`
+  - LoRA checkpoints at `25 / 50 / 75 / 100 / 125 / 150`
+  - preview sheets at `25 / 50 / 75 / 100 / 125 / 150`
+- The archived config confirms this is the intended budget-only masked refinement:
+  - full-12 masked dataset
+  - `resolution=512`
+  - `rank=4`
+  - `learning_rate=1e-5`
+  - `max_train_steps=150`
+  - `checkpointing_steps=25`
+
+Conclusion:
+
+- The masked early-stop Colab result is now preserved in both raw and extracted form.
+- Clearing `/Volumes/DevSSD/Download` will not remove project access to this run.
+- Result ingestion should be treated as mandatory project memory hygiene before any later evaluation or cleanup step.
+
+### Experiment 2026-04-06I - Realign Masked Local Validation Protocol And Rank The Archived Early-Stop Run
+
+Hypothesis:
+If the ROI inpaint validation helper is made robust to crop-size mismatches and all early-stop checkpoints are re-evaluated under one consistent local validation protocol, we can make a trustworthy checkpoint-ranking decision for the new archived early-stop run.
+
+Change made:
+
+- Patched [`src/inference/masked_inpaint_utils.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/inference/masked_inpaint_utils.py) so ROI-generated crops are resized back to the source crop size before exact outside-mask compositing when the diffusion pipeline returns an off-size crop
+- Re-ran local masked validation with `--disable-safety-checker --preserve-unmasked-exact` for the early-stop archived checkpoints:
+  - `step025`
+  - `step050`
+  - `step075`
+  - `step100`
+  - `step125`
+  - `step150`
+- Re-ran the old archived full-12 reference checkpoint `step100` under the same patched validation protocol for apples-to-apples comparison
+
+Result:
+
+- The earlier failure on the early-stop run was confirmed to be a validation-tool robustness problem, not a model-training or dataset problem
+- Under the patched protocol, the early-stop run validates cleanly on all 4 standard local samples:
+  - `pair_0009`
+  - `pair_0040`
+  - `pair_0047`
+  - `pair_0050`
+- On the patched protocol, exact outside-mask preservation is now correctly reflected as zero preserve error for these runs:
+  - `mean_unmasked_l1_to_input = 0.0`
+  - `mean_unmasked_delta_e_to_input = 0.0`
+- Early-stop run mean metrics improve monotonically across the budget curve:
+  - `step025`: `masked_l1 0.06630`, `masked_delta_e 8.74055`, `border_l1 0.02840`
+  - `step050`: `masked_l1 0.06606`, `masked_delta_e 8.69487`, `border_l1 0.02835`
+  - `step075`: `masked_l1 0.06582`, `masked_delta_e 8.64918`, `border_l1 0.02831`
+  - `step100`: `masked_l1 0.06560`, `masked_delta_e 8.60186`, `border_l1 0.02828`
+  - `step125`: `masked_l1 0.06543`, `masked_delta_e 8.56099`, `border_l1 0.02829`
+  - `step150`: `masked_l1 0.06538`, `masked_delta_e 8.53859`, `border_l1 0.02836`
+- Old archived full-12 `step100`, re-run under the same patched protocol, lands at:
+  - `masked_l1 0.06558`
+  - `masked_delta_e 8.60673`
+  - `border_l1 0.02829`
+- Relative to that old archived `step100`, the new early-stop `step150` is slightly better on masked edit metrics:
+  - `masked_l1`: `-0.000205`
+  - `masked_delta_e`: `-0.06815`
+  - while `border_l1` is slightly worse by `+0.000069`
+
+Conclusion:
+
+- The evaluation discrepancy was protocol-alignment noise, not evidence of a sudden model-regime jump.
+- Under one consistent patched validation protocol, the archived early-stop run is trustworthy and trends later than the previously favored archived `step100`.
+- The best point in the early-stop run is now `step150`, with `step125` as the nearest low-risk neighbor.
+- The new early-stop `step150` slightly outperforms the old archived `step100` on masked edit quality, but the gain is modest rather than dramatic.
+
+### Experiment 2026-04-09A - Close The Patched Masked Budget Curve By Re-Running Old Archived `step150 / step200`
+
+Hypothesis:
+If the older archived full-12 checkpoints `step150` and `step200` are also re-run under the same patched local validation protocol, we can close the masked budget question without opening another training run.
+
+Change made:
+
+- Re-ran old archived full-12 `step150` under the patched exact-composite validation protocol into [`outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step150_disable_safety_rerun`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step150_disable_safety_rerun)
+- Re-ran old archived full-12 `step200` under the same protocol into [`outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step200_disable_safety_rerun`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_run_2026-04-03_step200/local_validation_step200_disable_safety_rerun)
+- Compared those results against:
+  - old archived `step100` re-run
+  - new early-stop run `step125`
+  - new early-stop run `step150`
+
+Result:
+
+- Old archived `step150` re-run:
+  - `masked_l1 0.065375`
+  - `masked_delta_e 8.537905`
+  - `border_l1 0.028373`
+- Old archived `step200` re-run:
+  - `masked_l1 0.065640`
+  - `masked_delta_e 8.552402`
+  - `border_l1 0.028603`
+- Combined patched-protocol ranking across the strongest candidate points:
+  - `old150`: best masked edit metrics by a hair
+  - `new150`: essentially tied with `old150`
+  - `new125`: slightly behind the two `step150` checkpoints
+  - `old100`: clearly a little worse than the `150` points
+  - `old200`: worse than both `150` points
+- The gap is extremely small:
+  - `old150` beats `new150` on `masked_l1` by about `0.000003`
+  - `old150` beats `new150` on `masked_delta_e` by about `0.00068`
+  - `new150` slightly beats `old150` on `border_l1` by about `0.000015`
+
+Conclusion:
+
+- The budget question is now effectively closed for the current full-12 masked setup.
+- `150` is the stable best-step region; `200` is already beyond the useful optimum, and `100` is slightly early.
+- The two `step150` checkpoints are practically tied, so the project can use the dedicated early-stop run as the cleaner current reference without losing meaningful quality.
+- The next masked experiment should move on to a new single variable rather than reopening budget yet again.
+
+### Experiment 2026-04-09B - Select The Next Masked Single Variable And Prepare The Colab Handoff
+
+Hypothesis:
+If the next masked experiment changes only `lambda_color` while keeping the current full-12 dataset, `step150` budget, rank, resolution, prompt, and validation protocol fixed, the result will be more interpretable than changing rank or resolution next.
+
+Change made:
+
+- Re-read project memory and locked the next-round goal to selecting exactly one new masked training variable.
+- Reused the long-lived Evaluation Agent and Training Agent to independently rank the next safest masked single variable after budget closure.
+- Added a dedicated Colab config at [`colab/masked_inpaint_full12_lambda_color_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_lambda_color_v1.yaml)
+- Updated [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb) so a fresh clone now defaults to that new config.
+
+Result:
+
+- Both reused agents ranked `lambda_color` as the best next single variable.
+- The agreed reasoning was:
+  - budget is already closed for the current full-12 setup
+  - rank and resolution would introduce larger compute and interpretation shifts
+  - `lambda_identity` is cheaper than rank / resolution, but current patched validation already shows exact outside-mask preservation
+  - the remaining likely improvement target is mask-inside color stability and local color consistency
+- The new Colab config changes only one training value relative to the current early-stop baseline:
+  - `lambda_color: 0.5 -> 1.0`
+- Everything else is held fixed:
+  - dataset: `dataset/masked_inpaint_cuticle_cleanup_v1`
+  - manifest: `dataset/annotations/masked_cuticle_cleanup_v1_approved_manifest.json`
+  - budget: `max_train_steps=150`, `checkpointing_steps=25`, `preview_steps=25`
+  - resolution: `512`
+  - rank: `4`
+  - `lambda_identity: 5.0`
+  - `learning_rate: 1e-5`
+
+Conclusion:
+
+- The next masked experiment should be a single-variable `lambda_color` test, not another budget run and not a rank / resolution jump.
+- The current best handoff is now ready for direct Colab use after a fresh clone.
+- This keeps the next result interpretable against the existing `step150` masked reference checkpoint.
