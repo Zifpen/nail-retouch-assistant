@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-04-06
+Last updated: 2026-04-14
 
 ## Completed
 
@@ -66,6 +66,9 @@ Last updated: 2026-04-06
 - [x] Re-run the older archived full-12 `step150` and `step200` checkpoints under the same patched local validation protocol to close the current masked budget curve.
 - [x] Decide the next masked single-variable experiment now that the budget-only question is closed and `step150` is the stable best-step region for the current full-12 setup.
 - [x] Prepare a direct Colab handoff for the next masked `lambda_color` ablation.
+- [x] Archive the `lambda_color=1.0` masked Colab output zip locally in both raw and extracted form.
+- [x] Validate `lambda_color=1.0` checkpoints against the same patched 4-sample local protocol used for the current masked reference.
+- [x] Decide whether the `lambda_color=1.0` run is a regression, tie, or small improvement relative to the current masked reference.
 
 ## Next Experiments
 
@@ -90,8 +93,17 @@ Last updated: 2026-04-06
 - [ ] Run a budget-only masked early-stop refinement on faster hardware, keeping the full-12 dataset and all other training variables fixed while tightening the useful checkpoint region around `step100`.
 - [ ] Evaluate the archived masked full-12 early-stop run on the same 4-sample local validation protocol used for the earlier `step050 / 100 / 150 / 200` ranking, and decide whether it sharpens or overturns the current `step100` preference.
 - [x] Evaluate the archived masked full-12 early-stop run on one internally consistent 4-sample local validation protocol, and decide whether it sharpens or overturns the current `step100` preference.
-- [ ] Run the next masked Colab experiment with only `lambda_color` changed from `0.5` to `1.0`, keeping the full-12 dataset and current `step150` budget fixed.
-- [ ] Compare the resulting checkpoints against the current masked reference on the same patched 4-sample local validation protocol.
+- [x] Run the next masked Colab experiment with only `lambda_color` changed from `0.5` to `1.0`, keeping the full-12 dataset and current `step150` budget fixed.
+- [x] Compare the resulting checkpoints against the current masked reference on the same patched 4-sample local validation protocol.
+- [x] Define the next post-`lambda_color` masked expansion step: either the next annotation pack for more masks, or one final taxonomy split before broader annotation.
+- [x] Decide whether the route is ready for a second explicit-mask seed batch after promoting the `lambda_color=1.0` run.
+- [x] Draft a conservative v2 explicit-mask seed manifest for the next annotation tranche.
+- [x] Generate a human-usable v2 annotation pack with per-pair `before` images and 3-panel sheets for manual mask authoring.
+- [x] Run the first Mask QA pass on the uploaded v2 seed masks.
+- [x] Re-review the two v2 micro-fix masks after the requested tightening pass.
+- [x] Promote the full v2 seed batch into a new approved manifest and rebuild the masked dataset.
+- [x] Confirm the rebuilt v2 dataset still completes a local smoke run.
+- [x] Confirm the rebuilt v2 dataset also completes a short 10-step local dry-run.
 - [x] Prepare a dedicated Colab config for the full-12 masked early-stop refinement experiment.
 - [x] Update the existing masked full-12 Colab notebook so a fresh clone defaults to the early-stop config without manual notebook edits.
 - [x] Harden the masked full-12 early-stop Colab notebook so it explicitly accepts a correctly uploaded cached Drive dataset before falling back to raw-pair discovery.
@@ -106,3 +118,19 @@ Last updated: 2026-04-06
 - [ ] Add a small hard validation set from `hard_val_optional` after the core route stops collapsing on easy pairs.
 - [x] Consider a `core_v3` legacy manifest if `pair_0022`, `pair_0066`, and `pair_0035` still dominate preserve-region drift after the `core_v2` retrain.
 - [ ] Revisit whether `pair_0035` should join a later secondary legacy bucket if `core_v3 cleanval` still looks too soft.
+- [x] Micro-adjust the two v2 seed masks that failed first-pass QA:
+  - `pair_0064`
+  - `pair_0154`
+- [x] Confirm the following v2 seed masks already pass first-pass QA:
+  - `pair_0118`
+  - `pair_0122`
+  - `pair_0153`
+  - `pair_0190`
+- [x] Confirm the repaired v2 seed masks now also pass QA:
+  - `pair_0064`
+  - `pair_0154`
+- [ ] Use [`dataset/annotation_packs/masked_cuticle_cleanup_v2_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v2_seed) as the working annotation pack instead of browsing `raw/` directly.
+- [x] Run `Mask QA -> approved-manifest promotion -> masked dataset rebuild` once the v2 seed masks arrive.
+- [ ] Run a slightly more informative short dry-run on `dataset/masked_inpaint_cuticle_cleanup_v2` after the smoke pass, keeping all training variables fixed.
+- [x] Run a slightly more informative short dry-run on `dataset/masked_inpaint_cuticle_cleanup_v2` after the smoke pass, keeping all training variables fixed.
+- [ ] Prepare a dataset-only Colab handoff that swaps the masked training input from `v1` to `v2` without changing the current masked training variables.

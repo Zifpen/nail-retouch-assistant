@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-04-06
+Last updated: 2026-04-14
 
 ## What Was Tested
 
@@ -636,6 +636,108 @@ python3 src/training/train_masked_inpaint_lora.py \
   - fresh clone branch `codex/masked-full12-colab`
   - run the masked full-12 notebook without manually editing `CONFIG_FILE`
   - upload / point to the same cached full-12 dataset at `/content/drive/MyDrive/masked_inpaint_cuticle_cleanup_v1_full12`
+- The `lambda_color=1.0` run is now archived locally in both forms:
+  - raw zip:
+    - [`archive/2026-04-06_user_result_zips/nail-retouch-masked-full12-lambda-color-outputs-20260409T193544Z-3-001.zip`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/nail-retouch-masked-full12-lambda-color-outputs-20260409T193544Z-3-001.zip)
+  - extracted run:
+    - [`outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs)
+- Training-side readout for the new run:
+  - clean single-variable change:
+    - `lambda_color: 0.5 -> 1.0`
+  - same:
+    - full-12 dataset
+    - `max_train_steps=150`
+    - `resolution=512`
+    - `rank=4`
+    - `lambda_identity=5.0`
+  - candidate checkpoints:
+    - `100 / 125 / 150`
+- Patched 4-sample validation comparison for the new run:
+  - `lambda100`:
+    - `masked_l1 0.0655837`
+    - `masked_delta_e 8.59608`
+    - `border_l1 0.0282721`
+  - `lambda125`:
+    - `masked_l1 0.0653976`
+    - `masked_delta_e 8.55251`
+    - `border_l1 0.0282762`
+  - `lambda150`:
+    - `masked_l1 0.0653309`
+    - `masked_delta_e 8.52669`
+    - `border_l1 0.0283312`
+  - previous masked references:
+    - `ref125`: `masked_l1 0.0654257`, `masked_delta_e 8.56099`, `border_l1 0.0282929`
+    - `ref150`: `masked_l1 0.0653785`, `masked_delta_e 8.53859`, `border_l1 0.0283582`
+  - preserve side:
+    - exact outside-mask preservation remains `0` on the patched protocol
+- Current masked checkpoint update:
+  - new best current reference:
+    - [`outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors)
+  - nearest neighbor:
+    - [`outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000125.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000125.safetensors)
+  - practical interpretation:
+    - `lambda_color=1.0` is a modest positive move
+    - the route still prefers the `150` region
+    - the main remaining uncertainty is no longer this loss tweak; it is how aggressively to expand mask coverage next
+- Reused-agent conclusion after the `lambda_color=1.0` promotion:
+  - the project is now ready for a conservative second explicit-mask seed batch
+  - do not open another masked training-variable experiment before extending annotation coverage at least once
+- Draft next annotation manifest is now available at:
+  - [`dataset/annotations/masked_cuticle_cleanup_v2_seed_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v2_seed_manifest.json)
+  - train: `pair_0118`, `pair_0122`, `pair_0153`, `pair_0154`, `pair_0190`
+  - val: `pair_0064`
+- Matching human-usable annotation pack now exists at:
+  - [`dataset/annotation_packs/masked_cuticle_cleanup_v2_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v2_seed)
+  - each pair includes `before.png`, `after.png`, and `<pair_id>_sheet.png`
+  - the sheet format is the existing 3-panel style: `before / after / bootstrap overlay`
+- A pack-specific scaffold manifest was also written to:
+  - [`dataset/annotations/masked_cuticle_cleanup_v2_seed_pack_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v2_seed_pack_manifest.json)
+- First-pass QA on the uploaded v2 seed masks is now complete:
+  - pass: `pair_0118`, `pair_0122`, `pair_0153`, `pair_0190`
+  - needs micro-adjust only: `pair_0064`, `pair_0154`
+  - full redraws needed: none
+- Specific adjustment summary:
+  - `pair_0064`: tighten the thumb-side band so it stays closer to the local proximal boundary and eats less nail plate
+  - `pair_0154`: tighten the thumb-side / lower-edge coverage so it reads as a narrow local posterior-edge band rather than a broader contour mask
+- Re-review after the tightening pass is now complete:
+  - `pair_0064`: pass
+  - `pair_0154`: pass
+  - updated authored-mask ratios:
+    - `pair_0064`: `0.0274`
+    - `pair_0154`: `0.0417`
+- Current v2 seed QA status:
+  - pass: `pair_0064`, `pair_0118`, `pair_0122`, `pair_0153`, `pair_0154`, `pair_0190`
+  - outstanding redraws: none
+- Dataset promotion after QA is now complete:
+  - new approved manifest:
+    - [`dataset/annotations/masked_cuticle_cleanup_v2_approved_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v2_approved_manifest.json)
+  - rebuilt dataset:
+    - [`dataset/masked_inpaint_cuticle_cleanup_v2`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_cuticle_cleanup_v2)
+  - build summary:
+    - [`dataset/masked_inpaint_cuticle_cleanup_v2/build_summary.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_cuticle_cleanup_v2/build_summary.json)
+- Key v2 data-layer readout:
+  - `train_count = 13`
+  - `val_count = 5`
+  - train `mean_mask_ratio = 0.0587`
+  - val `mean_mask_ratio = 0.0391`
+  - train `mean_final_luma_delta = 0.00165`
+  - val `mean_final_luma_delta = 0.00142`
+- First training-side confirmation on v2 is also complete:
+  - local smoke output:
+    - [`/tmp/masked_inpaint_lora_cuticle_cleanup_v2_local_smoke`](/tmp/masked_inpaint_lora_cuticle_cleanup_v2_local_smoke)
+  - completed `4/4` steps
+  - wrote metrics, config, checkpoint, and preview
+  - blocker remains local CPU speed, not data or code correctness
+- Short dry-run confirmation on v2 is now also complete:
+  - output:
+    - [`/tmp/masked_inpaint_lora_cuticle_cleanup_v2_step10_local`](/tmp/masked_inpaint_lora_cuticle_cleanup_v2_step10_local)
+  - completed `10/10` steps
+  - wrote metrics, config, checkpoint, and preview
+  - losses remained finite; no sign of dataset-format or trainer regression
+  - practical conclusion: the v2 expansion is now validated beyond smoke scale, and the next useful step is faster-hardware continuation rather than more local plumbing checks
+- Practical next manual boundary:
+  - no new manual mask fix is required on this v2 seed batch
+  - next step is either a dataset-only v2 Colab handoff or a faster-hardware run on the new masked dataset
 - Legacy comparison protocol is prepared:
   - baseline pair ids: `pair_0005`, `pair_0015`, `pair_0009`, `pair_0040`
   - compare new `core_v2` checkpoint against [`outputs/checkpoints/model_1401.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/checkpoints/model_1401.pkl)

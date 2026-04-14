@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-04-06
+Last updated: 2026-04-09
 
 ## 2026-03-30 - Treat Dataset Drift As The Primary Failure Mode
 
@@ -733,3 +733,62 @@ Implication:
 - Use [`colab/masked_inpaint_full12_lambda_color_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_lambda_color_v1.yaml) as the next masked Colab config.
 - Keep dataset, manifest, prompt behavior, rank, resolution, learning rate, and `step150` budget fixed.
 - Treat the result as a color-loss ablation against the current masked `step150` reference, not as a new broad training regime.
+
+## 2026-04-09 - Promote `lambda_color=1.0` `step150` To The Current Masked Reference
+
+Decision:
+Promote the new full-12 `lambda_color=1.0` run at `step150` to the current masked reference checkpoint, with `lambda_color=1.0` `step125` as the nearest rollback / comparison point.
+
+Why:
+
+- The run was a clean single-variable ablation relative to the previous masked reference: only `lambda_color` changed from `0.5` to `1.0`.
+- On the same patched 4-sample validation protocol, `lambda150` slightly outperformed the previous `ref150` on:
+  - `masked_l1_to_target`
+  - `masked_delta_e_to_target`
+  - `border_l1_to_target`
+- Exact outside-mask preservation remained perfect under the same protocol.
+
+Implication:
+
+- Treat [`outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors) as the current masked reference checkpoint.
+- Keep [`outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000125.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000125.safetensors) as the nearest lower-risk neighbor.
+- The project can now shift its main uncertainty away from the current loss stack and toward the next stage of mask/data expansion.
+
+## 2026-04-09 - Start The Next Masked Expansion With A Conservative V2 Seed Pack
+
+Decision:
+Open a second explicit-mask seed batch now, but keep it small and still constrained to `proximal_nail_boundary_refinement`.
+
+Why:
+
+- The masked route has already answered the immediate stability questions on the first full-12 subset:
+  - dataset build is stable
+  - Colab training is repeatable
+  - local validation is restored
+  - the budget region is already narrowed
+  - `lambda_color=1.0` improved slightly instead of regressing
+- That means annotation coverage is now a bigger limitation than another near-neighbor training ablation.
+- A conservative seed pack keeps the next step interpretable and avoids prematurely committing to large-scale labeling.
+
+Implication:
+
+- Use [`dataset/annotations/masked_cuticle_cleanup_v2_seed_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v2_seed_manifest.json) as the next manual annotation target.
+- Keep the task fixed at `proximal_nail_boundary_refinement`; do not mix in stronger shape-refinement masks yet.
+- Treat this as a controlled expansion batch, not as permission to start unrestricted mass annotation.
+
+## 2026-04-14 - Promote The V2 Expanded Dataset As The Next Masked Training Input
+
+Decision:
+After QA passes on all six v2 seed masks, promote them into a new approved manifest and use the rebuilt `dataset/masked_inpaint_cuticle_cleanup_v2` as the next masked training input.
+
+Why:
+
+- The entire v2 seed batch now passes semantic QA.
+- The rebuilt v2 dataset remains local in mask coverage and well-controlled after color alignment.
+- A first smoke run on the rebuilt dataset completed normally, so the dataset-only expansion did not break the masked training route.
+
+Implication:
+
+- Treat [`dataset/annotations/masked_cuticle_cleanup_v2_approved_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v2_approved_manifest.json) as the current approved manifest for the next expansion stage.
+- Treat [`dataset/masked_inpaint_cuticle_cleanup_v2`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_cuticle_cleanup_v2) as the next masked dataset to use for short validation runs and future faster-hardware training.
+- Keep the next experiment single-variable: the dataset changed; do not simultaneously change loss, rank, or resolution.

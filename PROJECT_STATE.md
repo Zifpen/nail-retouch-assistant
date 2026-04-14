@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-04-06
+Last updated: 2026-04-14
 
 ## Current Dataset Status
 
@@ -1878,3 +1878,270 @@ Conclusion:
 - The next masked experiment should be a single-variable `lambda_color` test, not another budget run and not a rank / resolution jump.
 - The current best handoff is now ready for direct Colab use after a fresh clone.
 - This keeps the next result interpretable against the existing `step150` masked reference checkpoint.
+
+### Experiment 2026-04-09C - Run The Full-12 `lambda_color=1.0` Ablation And Compare It Against The Current Masked Reference
+
+Hypothesis:
+If the current masked route is slightly under-regularized on local color consistency, then raising `lambda_color` from `0.5` to `1.0` should improve masked edit metrics on the patched 4-sample validation protocol without damaging exact outside-mask preservation.
+
+Change made:
+
+- Archived the user-provided Colab output zip:
+  - raw zip: [`archive/2026-04-06_user_result_zips/nail-retouch-masked-full12-lambda-color-outputs-20260409T193544Z-3-001.zip`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/nail-retouch-masked-full12-lambda-color-outputs-20260409T193544Z-3-001.zip)
+  - extracted run: [`outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs)
+- Verified that the run is a clean single-variable ablation:
+  - dataset unchanged
+  - `max_train_steps=150`
+  - `resolution=512`
+  - `rank=4`
+  - only `lambda_color: 0.5 -> 1.0`
+- Ran local masked validation for candidate checkpoints `100 / 125 / 150` and reconciled the output with the current patched 4-sample protocol over:
+  - `pair_0009`
+  - `pair_0040`
+  - `pair_0047`
+  - `pair_0050`
+
+Result:
+
+- Training-side run integrity is clean:
+  - checkpoints at `25 / 50 / 75 / 100 / 125 / 150`
+  - previews at the same steps
+  - no sign of collapse or late-stage blowout
+- Training-side trend remains late-improving:
+  - `step100 loss 3.8658`
+  - `step125 loss 3.7661`
+  - `step150 loss 2.5106`
+- Patched 4-sample validation means for the new run:
+  - `lambda100`: `masked_l1 0.0655837`, `masked_delta_e 8.59608`, `border_l1 0.0282721`
+  - `lambda125`: `masked_l1 0.0653976`, `masked_delta_e 8.55251`, `border_l1 0.0282762`
+  - `lambda150`: `masked_l1 0.0653309`, `masked_delta_e 8.52669`, `border_l1 0.0283312`
+- Current reference means:
+  - `ref125`: `masked_l1 0.0654257`, `masked_delta_e 8.56099`, `border_l1 0.0282929`
+  - `ref150`: `masked_l1 0.0653785`, `masked_delta_e 8.53859`, `border_l1 0.0283582`
+- Relative to the current masked reference `ref150`, the new `lambda150` is slightly better on all primary tracked means:
+  - `masked_l1`: improved by about `0.0000476`
+  - `masked_delta_e`: improved by about `0.01190`
+  - `border_l1`: improved by about `0.0000270`
+- Exact outside-mask preservation remains intact:
+  - `mean_unmasked_l1_to_input = 0.0`
+  - `mean_unmasked_delta_e_to_input = 0.0`
+
+Conclusion:
+
+- `lambda_color=1.0` is a small but real positive move, not a regression.
+- Within this run, `step150` is again the best checkpoint region, with `step125` as the nearest earlier neighbor.
+- This strengthens confidence that the current masked route is stable enough to justify moving attention from training-budget uncertainty toward dataset expansion and more mask coverage.
+
+### Experiment 2026-04-09D - Open The Next Conservative Explicit-Mask Seed Batch
+
+Hypothesis:
+If the masked route has already stabilized on the first full-12 subset, the next most valuable single step is to expand annotation coverage with a small second seed pack instead of opening another training-variable sweep.
+
+Change made:
+
+- Re-read the current memory after the `lambda_color=1.0` promotion.
+- Reused the evaluation role to answer whether the route is ready for the next explicit-mask expansion.
+- Reused the dataset role to draft [`dataset/annotations/masked_cuticle_cleanup_v2_seed_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v2_seed_manifest.json) as a conservative next annotation batch.
+
+Result:
+
+- The masked route is now considered ready for controlled expansion:
+  - full-12 build, training, and validation are stable
+  - the budget region is already narrowed
+  - the first loss-side ablation was positive rather than destabilizing
+- The v2 seed batch is intentionally small: `5 train + 1 val`
+  - train: `pair_0118`, `pair_0122`, `pair_0153`, `pair_0154`, `pair_0190`
+  - val: `pair_0064`
+- The manifest keeps the task fixed at `proximal_nail_boundary_refinement`.
+- This batch is meant to extend coverage conservatively, not to begin large-scale unconstrained annotation.
+
+Conclusion:
+
+- The main bottleneck has shifted from trainer uncertainty to annotation coverage.
+- The project is now close enough to route stability that a small second seed pack is justified.
+- The next required manual step is to author masks for the six IDs in the new v2 seed manifest, then resume the standard `Mask QA -> Dataset build -> Training -> Evaluation` loop.
+
+### Experiment 2026-04-09E - Generate A Human-Usable V2 Annotation Pack
+
+Hypothesis:
+If the new v2 seed batch is going to be hand-labeled, the project should provide a ready-made annotation pack with per-pair `before` images and side-by-side context sheets so manual mask work does not depend on browsing `raw/` directly.
+
+Change made:
+
+- Reused the dataset role to generate a second annotation pack from the v2 seed manifest.
+- Reused the existing pack-generation flow instead of inventing a new layout.
+- Generated the pack under [`dataset/annotation_packs/masked_cuticle_cleanup_v2_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v2_seed).
+
+Result:
+
+- The v2 annotation pack now exists and is ready for manual use.
+- Each pair has:
+  - `before.png`
+  - `after.png`
+  - `pair_<id>_sheet.png` as a 3-panel `before / after / bootstrap overlay` sheet
+- The pack also includes:
+  - `bootstrap_masks/`
+  - `bootstrap_overlays/`
+  - `README.md`
+  - `summary.json`
+- A matching pack-specific manifest was also written to [`dataset/annotations/masked_cuticle_cleanup_v2_seed_pack_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v2_seed_pack_manifest.json).
+
+Conclusion:
+
+- The next manual annotation step no longer requires opening `raw/` directly.
+- The user can now take `before` images and 3-panel sheets directly from the v2 pack and draw the final masks into the v2 mask directory.
+
+### Experiment 2026-04-13A - QA Review The First V2 Seed Masks
+
+Hypothesis:
+If the first v2 seed masks stay within the same `proximal_nail_boundary_refinement` locality rules as the v1 full-12 set, then most of the batch should be promotable with only limited correction instead of broad redraws.
+
+Change made:
+
+- Re-read the project memory and confirmed that the current single goal is `Mask QA` for the newly uploaded v2 seed masks.
+- Reused a scoped mask-QA pass on:
+  - `pair_0064`
+  - `pair_0118`
+  - `pair_0122`
+  - `pair_0153`
+  - `pair_0154`
+  - `pair_0190`
+- Checked each sample against:
+  - the authored mask in [`dataset/annotations/masks/masked_cuticle_cleanup_v2_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masks/masked_cuticle_cleanup_v2_seed)
+  - the raw `before/after` pair
+  - the v2 annotation-pack sheets
+
+Result:
+
+- `4 / 6` masks are already promotable:
+  - `pair_0118`
+  - `pair_0122`
+  - `pair_0153`
+  - `pair_0190`
+- `2 / 6` masks need only small tightening rather than redraw:
+  - `pair_0064`: thumb-side band is slightly too wide and eats into more nail plate than needed
+  - `pair_0154`: thumb-side / lower-edge coverage is slightly too broad and should be tightened toward the true local posterior-edge band
+- No sample needs a full redraw.
+- Objective authored-mask ratios remain local:
+  - `pair_0064`: `0.0386`
+  - `pair_0118`: `0.0509`
+  - `pair_0122`: `0.0403`
+  - `pair_0153`: `0.0261`
+  - `pair_0154`: `0.0546`
+  - `pair_0190`: `0.0259`
+
+Conclusion:
+
+- The v2 seed batch is healthy overall; the new blocker is not broad semantic failure, only two narrow mask-tightening fixes.
+- Dataset promotion should wait for the small fixes on `pair_0064` and `pair_0154` so the v2 batch enters with a clean, consistent locality standard.
+
+### Experiment 2026-04-14A - Re-Review The Two V2 Seed Micro-Fix Masks
+
+Hypothesis:
+If `pair_0064` and `pair_0154` are tightened around the previously flagged thumb-side / lower-edge spill, the whole v2 seed batch should become promotable without any redraws.
+
+Change made:
+
+- Re-read project memory before reopening QA.
+- Re-checked the updated authored masks for:
+  - `pair_0064`
+  - `pair_0154`
+- Compared the revised masks against the v2 pack `before / after / bootstrap` sheets and direct overlay-on-before visualizations.
+
+Result:
+
+- `pair_0064` now passes:
+  - authored-mask ratio tightened from `0.0386` to `0.0274`
+  - thumb-side band now reads as a local proximal-boundary band rather than a broader nail-plate carve-out
+- `pair_0154` now passes:
+  - authored-mask ratio tightened from `0.0546` to `0.0417`
+  - thumb-side / lower-edge coverage is now narrow enough to fit the intended local posterior-edge refinement task
+- No remaining v2 seed sample needs redraw or additional micro-adjustment.
+
+Conclusion:
+
+- The full v2 seed batch now passes semantic QA.
+- The next blocker is no longer mask authoring; it is promoting these six masks into the next approved manifest and rebuilding the masked dataset.
+
+### Experiment 2026-04-14B - Promote The Full V2 Seed Batch And Rebuild The Masked Dataset
+
+Hypothesis:
+If the full v2 seed batch is promoted without changing task definition or training hyperparameters, the resulting masked dataset should remain local and color-aligned enough to enter the next training-preparation step.
+
+Change made:
+
+- Reused the dataset role to merge the passed v2 seed masks into a new approved manifest at [`dataset/annotations/masked_cuticle_cleanup_v2_approved_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v2_approved_manifest.json).
+- Rebuilt the masked dataset into [`dataset/masked_inpaint_cuticle_cleanup_v2`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_cuticle_cleanup_v2).
+- Reused the evaluation role to compare `v1 -> v2` build summaries before changing anything training-side.
+
+Result:
+
+- The promoted v2 dataset now contains:
+  - train: `13`
+  - val: `5`
+- Data-layer summary remains controlled:
+  - train `mean_mask_ratio`: `0.0587`
+  - val `mean_mask_ratio`: `0.0391`
+  - train `mean_final_luma_delta`: `0.00165`
+  - val `mean_final_luma_delta`: `0.00142`
+- Compared with `v1`, the new dataset is a moderate expansion rather than a distribution break:
+  - masks are still local
+  - color alignment still suppresses most global luma drift
+  - the main yellow-flag samples are higher raw-luma pairs like `pair_0153`, `pair_0154`, and `pair_0118`, but they do not become red flags after alignment
+
+Conclusion:
+
+- The v2 data layer is safe enough to enter the next training-preparation step.
+- The next useful question is no longer “can it build,” but “does the trainer still behave normally when the dataset variable alone changes from `v1` to `v2`?”
+
+### Experiment 2026-04-14C - Run A First Local Smoke On The Rebuilt V2 Dataset
+
+Hypothesis:
+If the v2 expansion is truly data-safe, the current masked trainer should still launch and complete a low-cost local smoke run without any code or data-format regressions.
+
+Change made:
+
+- Reused the training role to run the existing local smoke entrypoint against [`dataset/masked_inpaint_cuticle_cleanup_v2`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_cuticle_cleanup_v2).
+
+Result:
+
+- The v2 smoke run completed `4/4` steps under:
+  - [`/tmp/masked_inpaint_lora_cuticle_cleanup_v2_local_smoke`](/tmp/masked_inpaint_lora_cuticle_cleanup_v2_local_smoke)
+- It wrote all expected artifacts:
+  - `metrics.jsonl`
+  - `training_config.json`
+  - `lora_checkpoints/pytorch_lora_weights_step_000004.safetensors`
+  - `previews/preview_step_000004.png`
+- The observed losses were finite and trainer behavior was normal.
+- The blocker remains local CPU speed, not dataset validity or trainer correctness.
+
+Conclusion:
+
+- Changing only the dataset from `v1` to `v2` does not break masked training startup.
+- The route has now passed data promotion plus smoke-scale training validation on the new v2 expansion.
+
+### Experiment 2026-04-14D - Run A Short 10-Step Local Dry-Run On The Rebuilt V2 Dataset
+
+Hypothesis:
+If the rebuilt v2 dataset is truly stable and not just smoke-safe, it should also complete a short 10-step local dry-run with normal artifact writing and finite losses under the unchanged masked training setup.
+
+Change made:
+
+- Reused the training role to run a `10-step` low-cost local dry-run on [`dataset/masked_inpaint_cuticle_cleanup_v2`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_cuticle_cleanup_v2) without changing the main training variables.
+
+Result:
+
+- The short dry-run completed `10/10` steps under:
+  - [`/tmp/masked_inpaint_lora_cuticle_cleanup_v2_step10_local`](/tmp/masked_inpaint_lora_cuticle_cleanup_v2_step10_local)
+- It wrote all expected artifacts:
+  - `metrics.jsonl`
+  - `training_config.json`
+  - `lora_checkpoints/pytorch_lora_weights_step_000010.safetensors`
+  - `previews/preview_step_000010.png`
+- Losses remained finite throughout the run.
+- The main limitation is still local CPU speed, not a dataset or trainer regression.
+
+Conclusion:
+
+- The v2 dataset has now cleared both smoke-scale and short dry-run training checks.
+- The next useful move is no longer local correctness validation; it is preparing or running a faster-hardware dataset-only continuation on the v2 dataset.
