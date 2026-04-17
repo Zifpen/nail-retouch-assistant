@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-04-09
+Last updated: 2026-04-17
 
 ## 2026-03-30 - Treat Dataset Drift As The Primary Failure Mode
 
@@ -218,6 +218,40 @@ Implication:
 
 - For local plumbing checks in this environment, prefer a cached inpainting snapshot when available.
 - Do not log remote model-resolution failures as evidence that the masked training route is broken.
+
+## 2026-04-17 - Keep The Full12 Lambda-Color Reference As The Masked Default After V3 Dataset-Only
+
+Decision:
+Do not replace the current masked reference with the partial `v3 dataset-only` run. Keep [`full12 lambda_color=1.0 step150`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors) as the default checkpoint.
+
+Why:
+
+- The `v3 dataset-only` run was stable and slightly forward on some metrics, but the deltas were extremely small and did not form a decisive upgrade.
+- `step150` in the v3 run landed in a near-tie regime:
+  - better on `masked_delta_e`, `unmasked_delta_e`, `border_l1`
+  - slightly worse on `masked_l1`, `unmasked_l1`
+- This matches the earlier `v2 dataset-only` readout: safe continuation, but not enough gain to justify a default checkpoint promotion.
+
+Implication:
+
+- Treat dataset-only masked expansion as useful for coverage and future taxonomy growth, but not as the best next optimization lever.
+- Keep the current full12 lambda-color reference as the comparison anchor for future masked experiments.
+
+## 2026-04-17 - Move The Next Masked Single-Variable Experiment To Lambda-Identity
+
+Decision:
+After `v2` and `v3` both landed in the near-tie / diminishing-returns regime, the next masked single-variable experiment should change `lambda_identity`, not dataset membership again.
+
+Why:
+
+- The current masked route is no longer bottlenecked by obvious dataset corruption on the promoted conservative subsets.
+- The dominant remaining question is whether we can improve preserve-region behavior and edge discipline by retuning the outside-mask identity pressure.
+- Continuing to probe small dataset-only additions would likely spend more annotation and GPU budget for similarly ambiguous gains.
+
+Implication:
+
+- Keep the current masked reference config fixed except for `lambda_identity`.
+- The next Colab handoff should define one narrow `lambda_identity` experiment around the current reference route.
 - Keep the modeling roadmap unchanged; this is an infrastructure detail, not a reason to revisit the masked task definition or loss stack.
 
 ## 2026-04-02 - Make The Local Smoke Wrapper Auto-Prefer Cached Inpainting Weights

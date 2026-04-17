@@ -1,9 +1,12 @@
 # Project State
 
-Last updated: 2026-04-16
+Last updated: 2026-04-17
 
 ## Current Dataset Status
 
+- `dataset/masked_inpaint_cuticle_cleanup_v1`: 8 train / 4 val. This remains the current masked validation anchor set used for the patched 4-sample local checkpoint protocol (`pair_0009 / 0040 / 0047 / 0050`).
+- `dataset/masked_inpaint_cuticle_cleanup_v2`: 13 train / 5 val. This is the first promoted post-`lambda_color` masked expansion batch; its first dataset-only continuation run was flat relative to the current masked reference.
+- `dataset/masked_inpaint_cuticle_cleanup_v3`: 5 train / 1 val. This is the current partial `v3` approved subset built from the passed conservative seed tranche (`pair_0022`, `pair_0028`, `pair_0035`, `pair_0066`, `pair_0071` train; `pair_0043` val).
 - `dataset/paired_edit_core_v1`: 29 train / 5 val. This is the current guarded training dataset referenced by [`colab/paired_edit_core_v1_config.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/paired_edit_core_v1_config.yaml).
 - `dataset/paired_edit_core_v2`: 25 train / 5 val. This removes the four worst drift pairs from `core_v1` (`pair_0154`, `pair_0153`, `pair_0073`, `pair_0069`) while keeping prompt and split structure unchanged.
 - `dataset/paired_edit_core_v2_cleanval`: 25 train / 4 val. This is the guarded `core_v2` retrain split that moves `pair_0050` out of the clean validation holdout.
@@ -19,6 +22,12 @@ Last updated: 2026-04-16
 - Training pool plan currently separates the raw pairs into `phase1_core_train` (29), `phase1_expand_train` (35), `phase2_secondary_train` (73), `hard_val_optional` (3), and `exclude_for_now`.
 
 ## Current Training Setup
+
+Current masked reference route:
+
+- Reference run: [`outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs)
+- Default checkpoint: [`pytorch_lora_weights_step_000150.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors)
+- Current single-variable frontier after the `v3` dataset-only comparison: `lambda_identity`
 
 Latest guarded route in [`colab/paired_edit_core_v1_config.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/paired_edit_core_v1_config.yaml):
 
@@ -119,6 +128,64 @@ Conclusion:
 - The masked local-target route is practical in the current repository and can now be built deterministically.
 - Pairwise color alignment is effective enough to keep as a permanent preprocessing stage.
 - Diff masks are useful only for prototyping and smoke tests; explicit masks are still required for the real training dataset.
+
+### Experiment 2026-04-17A - Archive And Evaluate The Partial V3 Dataset-Only Masked Run
+
+Hypothesis:
+If the conservative partial `v3` masked subset adds useful new local-boundary coverage, the resulting dataset-only continuation should beat the current `full12 lambda_color=1.0 step150` masked reference by more than noise on the patched 4-anchor validation protocol.
+
+Change made:
+
+- Archived the user-provided zip into [`archive/2026-04-06_user_result_zips/nail-retouch-masked-cuticle-cleanup-v3-dataset-only-outputs-20260417T040028Z-3-001.zip`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/nail-retouch-masked-cuticle-cleanup-v3-dataset-only-outputs-20260417T040028Z-3-001.zip)
+- Extracted the run into [`outputs/masked_inpaint_colab_runs/v3_dataset_only_run_2026-04-16_step150/nail-retouch-masked-cuticle-cleanup-v3-dataset-only-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/v3_dataset_only_run_2026-04-16_step150/nail-retouch-masked-cuticle-cleanup-v3-dataset-only-outputs)
+- Evaluated `step100 / 125 / 150` on the same patched `pair_0009 / 0040 / 0047 / 0050` validation protocol used for the current masked reference
+
+Result:
+
+- The archived run is intact and trainable:
+  - checkpoints at `25 / 50 / 75 / 100 / 125 / 150`
+  - healthy late training trend with no collapse signal
+- Best checkpoint inside the run is `step150`
+- `step150` summary:
+  - `masked_l1_to_target = 0.0655206`
+  - `masked_delta_e_to_target = 8.4985461`
+  - `unmasked_l1_to_input = 0.0056324`
+  - `unmasked_delta_e_to_input = 1.1260479`
+  - `border_l1_to_target = 0.0360208`
+- Current masked reference summary:
+  - `masked_l1_to_target = 0.0653309`
+  - `masked_delta_e_to_target = 8.5266851`
+  - `unmasked_l1_to_input = 0.0056065`
+  - `unmasked_delta_e_to_input = 1.1307144`
+  - `border_l1_to_target = 0.0361802`
+
+Conclusion:
+
+- `v3 dataset-only` is safe but effectively flat relative to the current masked reference, with only a slight forward tilt.
+- The result is not strong enough to replace the current default checkpoint.
+- Dataset-only masked expansion has now hit a diminishing-returns regime similar to `v2`.
+- The next masked single-variable experiment should stop probing dataset-only additions and move to `lambda_identity`.
+
+### Experiment 2026-04-17B - Prepare The Next Masked Colab Handoff Around Lambda-Identity
+
+Hypothesis:
+If the next meaningful gain is more preserve-region discipline rather than more dataset-only churn, a moderate increase in `lambda_identity` should be the cleanest next single-variable test.
+
+Change made:
+
+- Added [`colab/masked_inpaint_full12_lambda_identity_7p5_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_lambda_identity_7p5_v1.yaml)
+- Updated [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb) so a fresh clone now defaults to the new `lambda_identity` config
+
+Result:
+
+- The next masked Colab handoff is now fixed to a single changed training field:
+  - `lambda_identity: 5.0 -> 7.5`
+- All other dataset, prompt, resolution, rank, `lambda_color`, and step-budget settings remain aligned with the current full12 masked reference lineage
+
+Conclusion:
+
+- The next masked experiment is now operationally defined and ready for GitHub push / Colab use.
+- This keeps the route interpretable after the flat `v2` and `v3` dataset-only results.
 
 ### Experiment 2026-03-30C - Masked Inpaint Training Entrypoint Scaffold
 

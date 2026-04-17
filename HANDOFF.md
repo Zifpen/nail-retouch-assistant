@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-04-16
+Last updated: 2026-04-17
 
 ## What Was Tested
 
@@ -50,6 +50,22 @@ Last updated: 2026-04-16
   - [`src/inference/run_masked_inpaint_validation.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/inference/run_masked_inpaint_validation.py)
 - The explicit-mask annotation pack exists under [`dataset/annotation_packs/masked_cuticle_cleanup_v1/README.md`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v1/README.md).
 - The partial `v3` masked subset manifest now exists locally at [`dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json) and is the manifest that the `v3` dataset-only Colab handoff expects.
+- The archived masked `v3 dataset-only` run now exists under [`outputs/masked_inpaint_colab_runs/v3_dataset_only_run_2026-04-16_step150/nail-retouch-masked-cuticle-cleanup-v3-dataset-only-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/v3_dataset_only_run_2026-04-16_step150/nail-retouch-masked-cuticle-cleanup-v3-dataset-only-outputs).
+- The best checkpoint inside the archived `v3 dataset-only` run is `step150`.
+- The `v3 dataset-only` result is effectively flat relative to the current masked reference:
+  - reference `step150`: `masked_l1 0.0653309`, `masked_delta_e 8.5266851`, `unmasked_l1 0.0056065`, `unmasked_delta_e 1.1307144`, `border_l1 0.0361802`
+  - v3 `step150`: `masked_l1 0.0655206`, `masked_delta_e 8.4985461`, `unmasked_l1 0.0056324`, `unmasked_delta_e 1.1260479`, `border_l1 0.0360208`
+- Practical interpretation:
+  - safe run
+  - slight forward tilt
+  - not strong enough to replace the current masked default checkpoint
+- Current masked default should remain [`full12 lambda_color step150`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors).
+- Next masked optimization move should shift from dataset-only probing to a narrow `lambda_identity` experiment.
+- The next masked Colab handoff is now prepared:
+  - config: [`colab/masked_inpaint_full12_lambda_identity_7p5_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_lambda_identity_7p5_v1.yaml)
+  - notebook default: [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
+  - only changed training variable: `lambda_identity 5.0 -> 7.5`
+  - intended Drive output dir: `/content/drive/MyDrive/nail-retouch-masked-full12-lambda-identity-7p5-outputs`
 - The first approved masks now have a more accurate interpretation: they are local posterior-edge refinement masks, not pure dead-skin cleanup masks.
 - Four explicit masks are now approved and usable:
   - `pair_0015`
@@ -139,9 +155,7 @@ Last updated: 2026-04-16
 
 ## Next Best Experiment
 
-Before launching the partial `v3` Colab run again, make sure the GitHub branch includes [`dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json); the previous Colab failure was caused by the config/notebook being pushed without this manifest file.
-
-Run a dataset-only retrain on `dataset/paired_edit_core_v2` or validate the archived full-12 masked Colab checkpoints in an environment with a complete inpainting base.
+Run the prepared single-variable masked Colab experiment that changes only `lambda_identity` from `5.0` to `7.5` around the current full12 lambda-color reference.
 
 Hypothesis:
 Two narrow next moves are now available:

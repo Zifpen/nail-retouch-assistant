@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-04-16
+Last updated: 2026-04-17
 
 ## Completed
 
@@ -153,3 +153,8 @@ Last updated: 2026-04-16
 - [x] Confirm that the partial v3 approved subset also completes a short 10-step local dry-run.
 - [x] Prepare a dataset-only Colab handoff for the current partial `v3` approved subset without changing the masked training variables.
 - [x] Push the missing `dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json` file so the partial `v3` Colab handoff can resolve its local manifest path after a fresh clone.
+- [x] Archive the completed masked `v3 dataset-only` Colab run locally under [`outputs/masked_inpaint_colab_runs/v3_dataset_only_run_2026-04-16_step150`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/v3_dataset_only_run_2026-04-16_step150).
+- [x] Compare the archived `v3 dataset-only` checkpoints against the current masked reference on the patched 4-anchor local validation protocol.
+- [x] Decide whether `v3 dataset-only` is forward enough to replace the current masked reference.
+- [ ] Prepare the next masked single-variable Colab handoff with only `lambda_identity` changed around the current full12 lambda-color reference.
+- [x] Prepare the next masked single-variable Colab handoff with only `lambda_identity` changed around the current full12 lambda-color reference.

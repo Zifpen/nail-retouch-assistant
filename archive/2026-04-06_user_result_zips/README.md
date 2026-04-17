@@ -36,3 +36,7 @@ Archived files:
   - SHA256: `61632e9238c7829bbd3414de5a7d294d004a84dee9d7bd49b6567cb6cd29be77`
   - Ingested run:
     - [`outputs/masked_inpaint_colab_runs/v2_dataset_only_run_2026-04-14_step150/nail-retouch-masked-cuticle-cleanup-v2-dataset-only-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/v2_dataset_only_run_2026-04-14_step150/nail-retouch-masked-cuticle-cleanup-v2-dataset-only-outputs)
+- `nail-retouch-masked-cuticle-cleanup-v3-dataset-only-outputs-20260417T040028Z-3-001.zip`
+  - SHA256: `2ad1d0e2b998b7a2c52a13f6b5e7bc638da6882952acf08ba61c172b440c186d`
+  - Ingested run:
+    - [`outputs/masked_inpaint_colab_runs/v3_dataset_only_run_2026-04-16_step150/nail-retouch-masked-cuticle-cleanup-v3-dataset-only-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/v3_dataset_only_run_2026-04-16_step150/nail-retouch-masked-cuticle-cleanup-v3-dataset-only-outputs)
