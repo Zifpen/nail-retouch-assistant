@@ -792,3 +792,37 @@ Implication:
 - Treat [`dataset/annotations/masked_cuticle_cleanup_v2_approved_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v2_approved_manifest.json) as the current approved manifest for the next expansion stage.
 - Treat [`dataset/masked_inpaint_cuticle_cleanup_v2`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_cuticle_cleanup_v2) as the next masked dataset to use for short validation runs and future faster-hardware training.
 - Keep the next experiment single-variable: the dataset changed; do not simultaneously change loss, rank, or resolution.
+
+## 2026-04-15 - Treat The First V2 Dataset-Only Run As Safe But Not Yet Promotable
+
+Decision:
+Keep the current masked reference checkpoint unchanged after the first `v2 dataset-only` continuation, and classify the run as `flat` rather than a decisive forward move.
+
+Why:
+
+- On the same patched 4-sample local validation protocol, the best v2 checkpoint (`step150`) only ties the current masked reference within tiny metric differences.
+- `step150` is slightly better on `masked_delta_e`, `unmasked_delta_e`, and `border_l1`, but slightly worse on `masked_l1` and `unmasked_l1`; the gaps are too small to justify a reference swap.
+- Earlier v2 checkpoints (`step100`, `step125`) remain a bit worse than v2 `step150`, so the run does not reveal a stronger hidden optimum elsewhere.
+
+Implication:
+
+- Keep [`outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors) as the current masked reference checkpoint.
+- Treat the promoted `v2` dataset as safe training input, but not yet as evidence that dataset expansion alone has materially improved the route.
+- Shift the next masked priority from another near-neighbor dataset-only retrain toward the next conservative annotation expansion batch.
+
+## 2026-04-15 - Keep The Next Annotation Expansion Conservative And Stay On The Same Task
+
+Decision:
+Open the next explicit-mask batch as another conservative `proximal_nail_boundary_refinement` seed pack instead of splitting taxonomy or jumping to a broad mass-labeling phase.
+
+Why:
+
+- The first `v2 dataset-only` continuation came back essentially flat, which means the current bottleneck is more likely annotation coverage than another small training tweak.
+- The route is already stable enough on build, smoke, Colab training, and patched local validation that it can absorb another moderate expansion.
+- The newly prepared v3 candidate pack includes some broader bootstrap drafts, so widening taxonomy right now would add ambiguity instead of clarity.
+
+Implication:
+
+- Keep the next manual annotation batch under the same task label: `proximal_nail_boundary_refinement`.
+- Use the new conservative seed artifacts under [`dataset/annotation_packs/masked_cuticle_cleanup_v3_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v3_seed) as the next annotation target.
+- Treat the bootstrap overlays as draft guidance only, and require manual narrowing before promotion.

@@ -735,9 +735,219 @@ python3 src/training/train_masked_inpaint_lora.py \
   - wrote metrics, config, checkpoint, and preview
   - losses remained finite; no sign of dataset-format or trainer regression
   - practical conclusion: the v2 expansion is now validated beyond smoke scale, and the next useful step is faster-hardware continuation rather than more local plumbing checks
+- The first full Colab run on the promoted v2 dataset is now archived:
+  - raw zip:
+    - [`archive/2026-04-06_user_result_zips/nail-retouch-masked-cuticle-cleanup-v2-dataset-only-outputs-20260415T011155Z-3-001.zip`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/nail-retouch-masked-cuticle-cleanup-v2-dataset-only-outputs-20260415T011155Z-3-001.zip)
+  - extracted run:
+    - [`outputs/masked_inpaint_colab_runs/v2_dataset_only_run_2026-04-14_step150/nail-retouch-masked-cuticle-cleanup-v2-dataset-only-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/v2_dataset_only_run_2026-04-14_step150/nail-retouch-masked-cuticle-cleanup-v2-dataset-only-outputs)
+- Training-side readout on the archived v2 run:
+  - complete checkpoints and previews at `25 / 50 / 75 / 100 / 125 / 150`
+  - no collapse or missing artifacts
+  - training-side interpretation is currently `healthy but not clearly better than the current reference`
+  - most relevant validation candidates:
+    - `step150`
+    - `step100`
+    - `step125`
 - Practical next manual boundary:
-  - no new manual mask fix is required on this v2 seed batch
-  - next step is either a dataset-only v2 Colab handoff or a faster-hardware run on the new masked dataset
+  - no new manual mask or Colab rerun was required to close the v2 dataset-only comparison
+  - same-protocol local validation on the archived v2 run is now complete
+- Same-protocol local validation result for the archived v2 dataset-only run:
+  - current masked reference (`v1 full12 lambda_color step150`):
+    - `mean_masked_l1_to_target = 0.0653309`
+    - `mean_masked_delta_e_to_target = 8.52669`
+    - `mean_unmasked_l1_to_input = 0.00560649`
+    - `mean_unmasked_delta_e_to_input = 1.13071`
+    - `mean_border_l1_to_target = 0.0361802`
+  - v2 dataset-only `step100`:
+    - `mean_masked_l1_to_target = 0.0656145`
+    - `mean_masked_delta_e_to_target = 8.60553`
+    - `mean_unmasked_l1_to_input = 0.00565653`
+    - `mean_unmasked_delta_e_to_input = 1.13780`
+    - `mean_border_l1_to_target = 0.0361691`
+  - v2 dataset-only `step125`:
+    - `mean_masked_l1_to_target = 0.0654315`
+    - `mean_masked_delta_e_to_target = 8.55559`
+    - `mean_unmasked_l1_to_input = 0.00563620`
+    - `mean_unmasked_delta_e_to_input = 1.13344`
+    - `mean_border_l1_to_target = 0.0361127`
+  - v2 dataset-only `step150`:
+    - `mean_masked_l1_to_target = 0.0653598`
+    - `mean_masked_delta_e_to_target = 8.52575`
+    - `mean_unmasked_l1_to_input = 0.00561866`
+    - `mean_unmasked_delta_e_to_input = 1.13017`
+    - `mean_border_l1_to_target = 0.0361426`
+- Reused-agent conclusion on that comparison:
+  - the v2 dataset-only run is `flat`, not a clear forward move
+  - best v2 checkpoint is `step150`
+  - `step100` and `step125` stay slightly behind `step150`
+  - do not upgrade the default masked reference checkpoint yet
+- Current practical interpretation:
+  - expanding from `v1` to `v2` looks safe
+  - the first `v2` continuation does not buy enough to justify a reference swap
+  - the next best lever is broader annotation coverage, not another near-neighbor dataset-only retrain
+- Next recommended masked expansion batch from the reused Dataset Agent:
+  - keep the same task:
+    - `proximal_nail_boundary_refinement`
+  - recommended seed size:
+    - `9` total (`7 train / 2 val`)
+  - recommended train ids:
+    - `pair_0022`
+    - `pair_0028`
+    - `pair_0035`
+    - `pair_0043`
+    - `pair_0066`
+    - `pair_0071`
+    - `pair_0073`
+  - recommended val ids:
+    - `pair_0120`
+    - `pair_0208`
+  - rationale:
+    - still close to the existing stable-teaching distribution
+    - broadens coverage across low-decoration french / nude / ombre / simple-solid styles
+    - does not yet require a taxonomy split
+- Current next manual boundary:
+  - prepare the next conservative explicit-mask seed pack
+  - once that pack is generated, the next required human step becomes drawing the new masks
+- That next conservative seed pack is now generated:
+  - seed manifest:
+    - [`dataset/annotations/masked_cuticle_cleanup_v3_seed_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v3_seed_manifest.json)
+  - pack manifest:
+    - [`dataset/annotations/masked_cuticle_cleanup_v3_seed_pack_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v3_seed_pack_manifest.json)
+  - annotation pack:
+    - [`dataset/annotation_packs/masked_cuticle_cleanup_v3_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v3_seed)
+  - final mask scaffold:
+    - [`dataset/annotations/masks/masked_cuticle_cleanup_v3_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masks/masked_cuticle_cleanup_v3_seed)
+- Current v3 seed ids:
+  - train:
+    - `pair_0022`
+    - `pair_0028`
+    - `pair_0035`
+    - `pair_0043`
+    - `pair_0066`
+    - `pair_0071`
+    - `pair_0073`
+  - val:
+    - `pair_0120`
+    - `pair_0208`
+- Special review note for `pair_0120`:
+  - manual review of [`dataset/annotation_packs/masked_cuticle_cleanup_v3_seed/pairs/pair_0120/pair_0120_sheet.png`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v3_seed/pairs/pair_0120/pair_0120_sheet.png) shows visible whole-nail / whole-finger offset between `before` and `after`
+  - treat it as a high-risk candidate, not a routine local-boundary sample
+  - if annotated, restrict the mask to a very narrow stable-overlap proximal-boundary region only
+  - if that is not cleanly possible, defer it instead of forcing a broad mask
+- Important annotation note for v3:
+  - stay on `proximal_nail_boundary_refinement`
+  - do not split taxonomy yet
+  - several bootstrap drafts are broader than the safer v2 tranche and should be treated strictly as redraw guidance, not near-final masks
+  - especially broad draft ratios include:
+    - `pair_0043`: `0.3633`
+    - `pair_0066`: `0.3258`
+    - `pair_0071`: `0.3136`
+    - `pair_0073`: `0.2777`
+    - `pair_0120`: `0.3851`
+    - `pair_0208`: `0.4796`
+- New real manual boundary:
+  - draw the v3 seed masks in [`dataset/annotations/masks/masked_cuticle_cleanup_v3_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masks/masked_cuticle_cleanup_v3_seed)
+  - after upload, resume `Mask QA -> approved-manifest promotion -> dataset rebuild`
+- Current recommended v3 drawing order:
+  - prioritize first:
+    - `pair_0028`
+    - `pair_0035`
+    - `pair_0022`
+  - draw after the first stable tranche:
+    - `pair_0043`
+    - `pair_0066`
+    - `pair_0071`
+    - `pair_0073`
+  - high-risk / defer to last:
+    - `pair_0120`
+    - `pair_0208`
+- Why `pair_0208` joins the high-risk bucket:
+  - manual spot-check suggests broader drift-like draft coverage plus decoration complexity
+  - it is riskier than the main body of the v3 batch for a first-pass local-boundary annotation
+- First uploaded `v3` final-mask QA is now complete for the 7 currently uploaded train samples:
+  - uploaded:
+    - `pair_0022`
+    - `pair_0028`
+    - `pair_0035`
+    - `pair_0043`
+    - `pair_0066`
+    - `pair_0071`
+    - `pair_0073`
+  - pass:
+    - `pair_0022`
+    - `pair_0028`
+    - `pair_0035`
+    - `pair_0043`
+    - `pair_0071`
+  - needs micro-adjust:
+    - `pair_0066`
+  - high-risk / defer:
+    - `pair_0073`
+- Specific QA notes:
+  - `pair_0066`:
+    - now re-reviewed and approved after tightening
+    - authored mask ratio is now about `0.0399`
+  - `pair_0073`:
+    - do not promote it in the current tranche
+    - user confirmed the underlying retouch stretches the posterior edge to improve nail shape, so it cannot be honestly narrowed into the current conservative local-boundary task
+- `pair_0120` and `pair_0208`:
+  - still no final uploaded masks in this round
+  - both remain high-risk candidates from earlier pack review
+- Updated real manual boundary:
+  - `pair_0066` is done
+  - `pair_0073` is deferred
+  - the currently passed v3 subset has now already been promoted into a partial approved manifest and rebuilt
+- Partial v3 approved-subset promotion is now complete:
+  - manifest:
+    - [`dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json)
+  - dataset:
+    - [`dataset/masked_inpaint_cuticle_cleanup_v3`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_cuticle_cleanup_v3)
+  - train:
+    - `pair_0022`
+    - `pair_0028`
+    - `pair_0035`
+    - `pair_0066`
+    - `pair_0071`
+  - val:
+    - `pair_0043`
+  - summary:
+    - `train_count = 5`
+    - `val_count = 1`
+    - train `mean_mask_ratio = 0.0373`
+    - val `mean_mask_ratio = 0.0810`
+    - train `mean_final_luma_delta = 0.00165`
+    - val `mean_final_luma_delta = -0.000719`
+- Minimal training closure on that partial v3 subset is also complete:
+  - smoke output:
+    - [`/tmp/masked_inpaint_lora_cuticle_cleanup_v3_local_smoke`](/tmp/masked_inpaint_lora_cuticle_cleanup_v3_local_smoke)
+  - short dry-run output:
+    - [`/tmp/masked_inpaint_lora_cuticle_cleanup_v3_step10_local`](/tmp/masked_inpaint_lora_cuticle_cleanup_v3_step10_local)
+  - both runs completed and wrote metrics, config, checkpoint, and preview artifacts
+- Current next manual boundary is no longer local data / smoke validation:
+  - either prepare a Colab handoff for this partial v3 subset
+  - or continue manual annotation on the deferred / high-risk v3 tail
+- Dataset-only Colab handoff for the current partial v3 subset is now also prepared:
+  - config:
+    - [`colab/masked_inpaint_cuticle_cleanup_v3_dataset_only_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_cuticle_cleanup_v3_dataset_only_v1.yaml)
+  - notebook:
+    - [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
+  - Drive dataset path:
+    - `/content/drive/MyDrive/masked_inpaint_cuticle_cleanup_v3`
+  - changed fields only:
+    - `dataset_dir -> dataset/masked_inpaint_cuticle_cleanup_v3`
+    - `manifest_path -> dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json`
+    - `drive_dataset_dir -> /content/drive/MyDrive/masked_inpaint_cuticle_cleanup_v3`
+  - unchanged training variables:
+    - `resolution=512`
+    - `max_train_steps=150`
+    - `checkpointing_steps=25`
+    - `preview_steps=25`
+    - `rank=4`
+    - `lambda_identity=5.0`
+    - `lambda_color=1.0`
+- Updated real manual boundary:
+  - either run the partial-v3 dataset-only Colab continuation
+  - or continue annotation on the deferred high-risk v3 samples (`pair_0073`, `pair_0120`, `pair_0208`)
 - Legacy comparison protocol is prepared:
   - baseline pair ids: `pair_0005`, `pair_0015`, `pair_0009`, `pair_0040`
   - compare new `core_v2` checkpoint against [`outputs/checkpoints/model_1401.pkl`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/checkpoints/model_1401.pkl)

@@ -104,6 +104,8 @@ Last updated: 2026-04-14
 - [x] Promote the full v2 seed batch into a new approved manifest and rebuild the masked dataset.
 - [x] Confirm the rebuilt v2 dataset still completes a local smoke run.
 - [x] Confirm the rebuilt v2 dataset also completes a short 10-step local dry-run.
+- [x] Archive the first full Colab masked run on the promoted v2 dataset.
+- [x] Analyze the archived v2 dataset-only run from training-side metrics and previews to choose validation candidates.
 - [x] Prepare a dedicated Colab config for the full-12 masked early-stop refinement experiment.
 - [x] Update the existing masked full-12 Colab notebook so a fresh clone defaults to the early-stop config without manual notebook edits.
 - [x] Harden the masked full-12 early-stop Colab notebook so it explicitly accepts a correctly uploaded cached Drive dataset before falling back to raw-pair discovery.
@@ -129,8 +131,24 @@ Last updated: 2026-04-14
 - [x] Confirm the repaired v2 seed masks now also pass QA:
   - `pair_0064`
   - `pair_0154`
-- [ ] Use [`dataset/annotation_packs/masked_cuticle_cleanup_v2_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v2_seed) as the working annotation pack instead of browsing `raw/` directly.
+- [x] Use [`dataset/annotation_packs/masked_cuticle_cleanup_v2_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v2_seed) as the working annotation pack instead of browsing `raw/` directly.
 - [x] Run `Mask QA -> approved-manifest promotion -> masked dataset rebuild` once the v2 seed masks arrive.
-- [ ] Run a slightly more informative short dry-run on `dataset/masked_inpaint_cuticle_cleanup_v2` after the smoke pass, keeping all training variables fixed.
 - [x] Run a slightly more informative short dry-run on `dataset/masked_inpaint_cuticle_cleanup_v2` after the smoke pass, keeping all training variables fixed.
-- [ ] Prepare a dataset-only Colab handoff that swaps the masked training input from `v1` to `v2` without changing the current masked training variables.
+- [x] Prepare a dataset-only Colab handoff that swaps the masked training input from `v1` to `v2` without changing the current masked training variables.
+- [x] Run same-protocol local validation on the archived v2 dataset-only checkpoints (`150`, `100`, `125`) against the current masked reference and decide whether v2 is forward, flat, or backward.
+- [x] Prepare the next conservative explicit-mask seed batch after the flat `v2 dataset-only` result, keeping the task fixed at `proximal_nail_boundary_refinement`.
+- [x] Generate a human-usable `v3` annotation pack with `before`, `after`, and sheet images for the next conservative seed batch.
+- [ ] Use [`dataset/annotation_packs/masked_cuticle_cleanup_v3_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v3_seed) as the working annotation pack for the next conservative expansion batch.
+- [x] Run the first Mask QA pass on the uploaded `v3` seed masks after annotation.
+- [ ] Treat `pair_0120` as a high-risk v3 annotation candidate and only keep it if a very narrow stable-overlap mask is possible.
+- [ ] Start v3 annotation from the stable-first tranche:
+  - `pair_0028`
+  - `pair_0035`
+  - `pair_0022`
+- [ ] Leave `pair_0208` in the high-risk / last-pass bucket together with `pair_0120`.
+- [x] Micro-adjust `pair_0066` so the current broad multi-finger bands tighten back into narrow local boundary regions.
+- [x] Decide whether `pair_0073` should be aggressively narrowed for one more QA pass or deferred out of the current v3 promotion batch.
+- [x] Promote the current passed v3 subset into the next approved manifest once the remaining uploaded masks are consolidated.
+- [x] Confirm that the partial v3 approved subset completes a local smoke run.
+- [x] Confirm that the partial v3 approved subset also completes a short 10-step local dry-run.
+- [x] Prepare a dataset-only Colab handoff for the current partial `v3` approved subset without changing the masked training variables.
