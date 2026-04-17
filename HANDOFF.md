@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-04-14
+Last updated: 2026-04-16
 
 ## What Was Tested
 
@@ -49,6 +49,7 @@ Last updated: 2026-04-14
   - [`src/inference/run_masked_inpaint_inference.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/inference/run_masked_inpaint_inference.py)
   - [`src/inference/run_masked_inpaint_validation.py`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/src/inference/run_masked_inpaint_validation.py)
 - The explicit-mask annotation pack exists under [`dataset/annotation_packs/masked_cuticle_cleanup_v1/README.md`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v1/README.md).
+- The partial `v3` masked subset manifest now exists locally at [`dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json) and is the manifest that the `v3` dataset-only Colab handoff expects.
 - The first approved masks now have a more accurate interpretation: they are local posterior-edge refinement masks, not pure dead-skin cleanup masks.
 - Four explicit masks are now approved and usable:
   - `pair_0015`
@@ -137,6 +138,8 @@ Last updated: 2026-04-14
 - Local true validation now has two trustworthy anchor samples, and the remaining limitation is sample coverage / ranking confidence rather than route viability.
 
 ## Next Best Experiment
+
+Before launching the partial `v3` Colab run again, make sure the GitHub branch includes [`dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json); the previous Colab failure was caused by the config/notebook being pushed without this manifest file.
 
 Run a dataset-only retrain on `dataset/paired_edit_core_v2` or validate the archived full-12 masked Colab checkpoints in an environment with a complete inpainting base.
 

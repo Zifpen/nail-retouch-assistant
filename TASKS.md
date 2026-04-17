@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-04-14
+Last updated: 2026-04-16
 
 ## Completed
 
@@ -152,3 +152,4 @@ Last updated: 2026-04-14
 - [x] Confirm that the partial v3 approved subset completes a local smoke run.
 - [x] Confirm that the partial v3 approved subset also completes a short 10-step local dry-run.
 - [x] Prepare a dataset-only Colab handoff for the current partial `v3` approved subset without changing the masked training variables.
+- [x] Push the missing `dataset/annotations/masked_cuticle_cleanup_v3_approved_subset_manifest.json` file so the partial `v3` Colab handoff can resolve its local manifest path after a fresh clone.
