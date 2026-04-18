@@ -164,4 +164,10 @@ Last updated: 2026-04-18
 - [ ] Choose the next masked single-variable experiment after the flat `lambda_identity=7.5` result.
 - [x] Choose the next masked single-variable experiment after the flat `lambda_identity=7.5` result.
 - [x] Prepare the next masked Colab handoff for `lambda_color = 1.25` with all other current reference settings fixed.
+- [x] Archive the completed full12 `lambda_color=1.25` Colab run locally under [`outputs/masked_inpaint_colab_runs/full12_lambda_color_1p25_run_2026-04-17_step150`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_1p25_run_2026-04-17_step150).
+- [x] Compare the archived `lambda_color=1.25` checkpoints against the current masked reference on the patched 4-anchor local validation protocol.
+- [x] Decide whether `lambda_color=1.25` is strong enough to replace the current masked reference.
+- [ ] Choose the next masked single-variable experiment after the flat `lambda_color=1.25` result.
+- [x] Choose the next masked single-variable experiment after the flat `lambda_color=1.25` result.
+- [x] Prepare the next masked Colab handoff for `rank = 8` with all other current reference settings fixed.
 - [x] Prepare the next masked single-variable Colab handoff with only `lambda_identity` changed around the current full12 lambda-color reference.

@@ -289,6 +289,42 @@ Implication:
 
 - Keep the current full12 reference recipe fixed except for `lambda_color`.
 - Use [`colab/masked_inpaint_full12_lambda_color_1p25_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_lambda_color_1p25_v1.yaml) as the next Colab handoff.
+
+## 2026-04-18 - Do Not Promote The Lambda-Color-1p25 Run Over The Current Masked Reference
+
+Decision:
+Keep [`full12 lambda_color=1.0 step150`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors) as the masked default. Do not promote the archived `lambda_color=1.25` run.
+
+Why:
+
+- The `lambda_color=1.25` run is stable but flat relative to the current reference.
+- It is microscopically worse on both edit-side and preserve-side means:
+  - `masked_l1 0.0653309 -> 0.0653402`
+  - `masked_delta_e 8.5266851 -> 8.5272422`
+  - `unmasked_l1 0.0056065 -> 0.0056094`
+  - `unmasked_delta_e 1.1307144 -> 1.1307668`
+- Border behavior is effectively unchanged.
+
+Implication:
+
+- A further small upward move in `lambda_color` no longer looks like the best immediate lever.
+- The route has now gone flat on three recent near-neighbor ablations: `v3 dataset-only`, `lambda_identity=7.5`, and `lambda_color=1.25`.
+
+## 2026-04-18 - Use Rank-8 As The Next Masked Single Variable
+
+Decision:
+After three flat near-neighbor ablations, make the next masked single-variable experiment a capacity test: `rank 4 -> 8`.
+
+Why:
+
+- Both evaluation and training roles ranked `rank 4 -> 8` above another conservative dataset/taxonomy expansion and above a `512 -> 768` resolution jump.
+- `dataset-only` has now gone flat twice, and the recent `lambda_identity` / `lambda_color` nudges were also flat.
+- A `rank 4 -> 8` test changes capacity while preserving the current winning recipe, making it the cleanest next probe of whether the model is now bottlenecked by LoRA capacity rather than by loss weights.
+
+Implication:
+
+- Keep the current full12 masked reference recipe fixed except for `rank`.
+- Use [`colab/masked_inpaint_full12_rank8_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_rank8_v1.yaml) as the next Colab handoff.
 - Keep the modeling roadmap unchanged; this is an infrastructure detail, not a reason to revisit the masked task definition or loss stack.
 
 ## 2026-04-02 - Make The Local Smoke Wrapper Auto-Prefer Cached Inpainting Weights

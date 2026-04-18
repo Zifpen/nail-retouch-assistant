@@ -82,6 +82,23 @@ Last updated: 2026-04-18
   - only changed training variable: `lambda_color 1.0 -> 1.25`
   - intended Drive output dir: `/content/drive/MyDrive/nail-retouch-masked-full12-lambda-color-1p25-outputs`
 - A competing proposal was `rank=8`, but this was not selected because the current strategy is to keep pushing the narrowest previously successful variable family before opening a new capacity regime.
+- The archived `lambda_color=1.25` run now exists under [`outputs/masked_inpaint_colab_runs/full12_lambda_color_1p25_run_2026-04-17_step150/nail-retouch-masked-full12-lambda-color-1p25-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_1p25_run_2026-04-17_step150/nail-retouch-masked-full12-lambda-color-1p25-outputs).
+- Best checkpoint inside that run is `step150`.
+- Comparison vs current masked reference is effectively flat:
+  - reference `step150`: `masked_l1 0.0653309`, `masked_delta_e 8.5266851`, `unmasked_l1 0.0056065`, `unmasked_delta_e 1.1307144`, `border_l1 0.0361802`
+  - `lambda_color=1.25` `step150`: `masked_l1 0.0653402`, `masked_delta_e 8.5272422`, `unmasked_l1 0.0056094`, `unmasked_delta_e 1.1307668`, `border_l1 0.0361808`
+- Practical interpretation:
+  - safe run
+  - no meaningful gain
+  - not strong enough to replace the current masked default checkpoint
+- The next chosen single-variable handoff is now:
+  - config: [`colab/masked_inpaint_full12_rank8_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_rank8_v1.yaml)
+  - notebook default: [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
+  - only changed training variable: `rank 4 -> 8`
+  - intended Drive output dir: `/content/drive/MyDrive/nail-retouch-masked-full12-rank8-outputs`
+- Why `rank8` won:
+  - higher information gain than another conservative dataset-only/taxonomy expansion
+  - much cleaner interpretation than a simultaneous detail-regime shift like `512 -> 768`
 - The first approved masks now have a more accurate interpretation: they are local posterior-edge refinement masks, not pure dead-skin cleanup masks.
 - Four explicit masks are now approved and usable:
   - `pair_0015`
@@ -171,7 +188,7 @@ Last updated: 2026-04-18
 
 ## Next Best Experiment
 
-Run the prepared single-variable masked Colab experiment that changes only `lambda_color` from `1.0` to `1.25` around the current full12 masked reference.
+Run the prepared single-variable masked Colab experiment that changes only `rank` from `4` to `8` around the current full12 masked reference.
 
 Hypothesis:
 Two narrow next moves are now available:
