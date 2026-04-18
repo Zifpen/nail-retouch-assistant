@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-04-17
+Last updated: 2026-04-18
 
 ## Completed
 
@@ -157,4 +157,11 @@ Last updated: 2026-04-17
 - [x] Compare the archived `v3 dataset-only` checkpoints against the current masked reference on the patched 4-anchor local validation protocol.
 - [x] Decide whether `v3 dataset-only` is forward enough to replace the current masked reference.
 - [ ] Prepare the next masked single-variable Colab handoff with only `lambda_identity` changed around the current full12 lambda-color reference.
+- [x] Prepare the next masked single-variable Colab handoff with only `lambda_identity` changed around the current full12 lambda-color reference.
+- [x] Archive the completed full12 `lambda_identity=7.5` Colab run locally under [`outputs/masked_inpaint_colab_runs/full12_lambda_identity_7p5_run_2026-04-17_step150`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_identity_7p5_run_2026-04-17_step150).
+- [x] Compare the archived `lambda_identity=7.5` checkpoints against the current masked reference on the patched 4-anchor local validation protocol.
+- [x] Decide whether `lambda_identity=7.5` is strong enough to replace the current masked reference.
+- [ ] Choose the next masked single-variable experiment after the flat `lambda_identity=7.5` result.
+- [x] Choose the next masked single-variable experiment after the flat `lambda_identity=7.5` result.
+- [x] Prepare the next masked Colab handoff for `lambda_color = 1.25` with all other current reference settings fixed.
 - [x] Prepare the next masked single-variable Colab handoff with only `lambda_identity` changed around the current full12 lambda-color reference.

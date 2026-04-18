@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-04-17
+Last updated: 2026-04-18
 
 ## Current Dataset Status
 
@@ -186,6 +186,70 @@ Conclusion:
 
 - The next masked experiment is now operationally defined and ready for GitHub push / Colab use.
 - This keeps the route interpretable after the flat `v2` and `v3` dataset-only results.
+
+### Experiment 2026-04-18A - Archive And Evaluate The Full12 Lambda-Identity-7p5 Run
+
+Hypothesis:
+If the current masked reference is under-regularizing preserve-region behavior, a moderate increase in `lambda_identity` from `5.0` to `7.5` should improve unmasked-region preservation without materially hurting edit quality.
+
+Change made:
+
+- Archived the user-provided zip into [`archive/2026-04-06_user_result_zips/nail-retouch-masked-full12-lambda-identity-7p5-outputs-20260418T025639Z-3-001.zip`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/nail-retouch-masked-full12-lambda-identity-7p5-outputs-20260418T025639Z-3-001.zip)
+- Extracted the run into [`outputs/masked_inpaint_colab_runs/full12_lambda_identity_7p5_run_2026-04-17_step150/nail-retouch-masked-full12-lambda-identity-7p5-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_identity_7p5_run_2026-04-17_step150/nail-retouch-masked-full12-lambda-identity-7p5-outputs)
+- Evaluated `step100 / 125 / 150` on the same patched 4-anchor validation protocol used for the current masked reference
+
+Result:
+
+- The run is complete and internally consistent:
+  - checkpoints at `25 / 50 / 75 / 100 / 125 / 150`
+  - stable training trend with no collapse or obvious preview regression
+- Best checkpoint inside the run is `step150`
+- New `step150` summary:
+  - `masked_l1_to_target = 0.0653356`
+  - `masked_delta_e_to_target = 8.5277605`
+  - `unmasked_l1_to_input = 0.0056021`
+  - `unmasked_delta_e_to_input = 1.1304536`
+  - `border_l1_to_target = 0.0361828`
+- Current masked reference summary:
+  - `masked_l1_to_target = 0.0653309`
+  - `masked_delta_e_to_target = 8.5266851`
+  - `unmasked_l1_to_input = 0.0056065`
+  - `unmasked_delta_e_to_input = 1.1307144`
+  - `border_l1_to_target = 0.0361802`
+
+Conclusion:
+
+- `lambda_identity = 7.5` is safe but effectively flat relative to the current masked reference.
+- It provides a tiny preservation gain, but the edit-side metrics become very slightly worse and the total difference is too small to justify a checkpoint promotion.
+- The current masked default should remain the `full12 lambda_color=1.0 step150` checkpoint.
+
+### Experiment 2026-04-18B - Choose And Prepare The Next Masked Single-Variable Handoff
+
+Hypothesis:
+After `v3 dataset-only` and `lambda_identity=7.5` both landed in a flat regime, the next most plausible frontier-moving lever is a small additional increase in inside-mask color pressure rather than another preservation or dataset-only change.
+
+Change made:
+
+- Reused evaluation and training roles to propose the next single-variable move:
+  - evaluation recommendation: `lambda_color = 1.25`
+  - training recommendation: `rank = 8`
+- Chose the `lambda_color = 1.25` route because it follows the only recent variable family that has already produced a real improvement in-project
+- Added [`colab/masked_inpaint_full12_lambda_color_1p25_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_lambda_color_1p25_v1.yaml)
+- Updated [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb) so a fresh clone now defaults to the new `lambda_color=1.25` config
+
+Result:
+
+- The next masked Colab handoff is now defined as:
+  - same full12 dataset
+  - same `rank = 4`
+  - same `lambda_identity = 5.0`
+  - same `150`-step budget
+  - only `lambda_color: 1.0 -> 1.25`
+
+Conclusion:
+
+- The next masked experiment is ready to run without additional local setup.
+- This preserves interpretability better than jumping to a new capacity regime (`rank=8`) immediately after two flat ablations.
 
 ### Experiment 2026-03-30C - Masked Inpaint Training Entrypoint Scaffold
 

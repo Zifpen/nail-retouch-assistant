@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-04-17
+Last updated: 2026-04-18
 
 ## 2026-03-30 - Treat Dataset Drift As The Primary Failure Mode
 
@@ -252,6 +252,43 @@ Implication:
 
 - Keep the current masked reference config fixed except for `lambda_identity`.
 - The next Colab handoff should define one narrow `lambda_identity` experiment around the current reference route.
+
+## 2026-04-18 - Do Not Promote The Lambda-Identity-7p5 Run Over The Current Masked Reference
+
+Decision:
+Keep [`full12 lambda_color=1.0 step150`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors) as the masked default. Do not promote the archived `lambda_identity=7.5` run.
+
+Why:
+
+- The `lambda_identity=7.5` run is stable and near-tied with the current reference, but not clearly better.
+- It improves preservation only by a negligible amount:
+  - `unmasked_l1 0.0056065 -> 0.0056021`
+  - `unmasked_delta_e 1.1307144 -> 1.1304536`
+- At the same time, edit-side fit becomes negligibly worse:
+  - `masked_l1 0.0653309 -> 0.0653356`
+  - `masked_delta_e 8.5266851 -> 8.5277605`
+- Border error is effectively unchanged.
+
+Implication:
+
+- `lambda_identity=7.5` should be treated as a safe ablation, not a new default.
+- The route remains in a diminishing-returns regime on this variable scale, so the next masked experiment should move to a different single variable rather than immediately adopting stronger identity pressure as the new baseline.
+
+## 2026-04-18 - Use A Small Lambda-Color Increase As The Next Masked Single Variable
+
+Decision:
+After the flat `v3 dataset-only` and `lambda_identity=7.5` results, make the next masked single-variable experiment a small `lambda_color` increase from `1.0` to `1.25`.
+
+Why:
+
+- `lambda_color` is the only recent variable family that has already produced a meaningful frontier improvement inside this project.
+- The latest two ablations suggest that both dataset-only expansion and stronger identity pressure are now in a diminishing-returns regime.
+- A small `1.0 -> 1.25` move is easier to interpret than jumping directly to a new capacity regime like `rank=8`.
+
+Implication:
+
+- Keep the current full12 reference recipe fixed except for `lambda_color`.
+- Use [`colab/masked_inpaint_full12_lambda_color_1p25_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_lambda_color_1p25_v1.yaml) as the next Colab handoff.
 - Keep the modeling roadmap unchanged; this is an infrastructure detail, not a reason to revisit the masked task definition or loss stack.
 
 ## 2026-04-02 - Make The Local Smoke Wrapper Auto-Prefer Cached Inpainting Weights
