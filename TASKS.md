@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-04-18
+Last updated: 2026-04-19
 
 ## Completed
 
@@ -170,4 +170,21 @@ Last updated: 2026-04-18
 - [ ] Choose the next masked single-variable experiment after the flat `lambda_color=1.25` result.
 - [x] Choose the next masked single-variable experiment after the flat `lambda_color=1.25` result.
 - [x] Prepare the next masked Colab handoff for `rank = 8` with all other current reference settings fixed.
+- [x] Archive the completed full12 `rank8` Colab run locally under [`outputs/masked_inpaint_colab_runs/full12_rank8_run_2026-04-18_step150`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_rank8_run_2026-04-18_step150).
+- [x] Compare the archived `rank8` checkpoints against the current masked reference on the patched 4-anchor local validation protocol.
+- [x] Decide whether `rank8` is strong enough to replace the current masked reference.
+- [x] Choose the next masked experiment after the confirmed backward `rank8` result.
+- [x] Create a tiny `shape_refinement` side-seed manifest and annotation pack separate from the `proximal_nail_boundary_refinement` mainline.
+- [ ] Use [`dataset/annotation_packs/masked_shape_refinement_v1_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v1_seed) as the working annotation pack for the first `shape_refinement` pass.
+- [x] Run first-pass Mask QA on the uploaded `shape_refinement` seed masks.
+- [x] Run second-pass Mask QA on the revised `shape_refinement` seed masks.
+- [x] Micro-adjust the first-pass `shape_refinement` masks:
+  - `pair_0074`
+- [x] Remove `pair_0120` from the first active `shape_refinement` pass because of severe geometric offset.
+- [ ] Use [`dataset/annotation_packs/masked_shape_refinement_v1_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v1_seed) as the working annotation pack for the first `shape_refinement` pass.
 - [x] Prepare the next masked single-variable Colab handoff with only `lambda_identity` changed around the current full12 lambda-color reference.
+- [x] Promote the first passed `shape_refinement` seed into an approved subset manifest.
+- [x] Build the first dedicated `shape_refinement` masked dataset.
+- [x] Confirm the first `shape_refinement` dataset completes a local smoke run.
+- [x] Confirm the first `shape_refinement` dataset also completes a short 10-step local dry-run.
+- [x] Prepare a first GPU-side Colab pilot handoff for the approved `shape_refinement` subset.

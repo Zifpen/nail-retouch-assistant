@@ -1,12 +1,13 @@
 # Project State
 
-Last updated: 2026-04-18
+Last updated: 2026-04-19
 
 ## Current Dataset Status
 
 - `dataset/masked_inpaint_cuticle_cleanup_v1`: 8 train / 4 val. This remains the current masked validation anchor set used for the patched 4-sample local checkpoint protocol (`pair_0009 / 0040 / 0047 / 0050`).
 - `dataset/masked_inpaint_cuticle_cleanup_v2`: 13 train / 5 val. This is the first promoted post-`lambda_color` masked expansion batch; its first dataset-only continuation run was flat relative to the current masked reference.
 - `dataset/masked_inpaint_cuticle_cleanup_v3`: 5 train / 1 val. This is the current partial `v3` approved subset built from the passed conservative seed tranche (`pair_0022`, `pair_0028`, `pair_0035`, `pair_0066`, `pair_0071` train; `pair_0043` val).
+- `dataset/masked_inpaint_shape_refinement_v1`: 3 train / 1 val. This is the first approved `shape_refinement` side-route subset (`pair_0074`, `pair_0100`, `pair_0209` train; `pair_0073` val).
 - `dataset/paired_edit_core_v1`: 29 train / 5 val. This is the current guarded training dataset referenced by [`colab/paired_edit_core_v1_config.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/paired_edit_core_v1_config.yaml).
 - `dataset/paired_edit_core_v2`: 25 train / 5 val. This removes the four worst drift pairs from `core_v1` (`pair_0154`, `pair_0153`, `pair_0073`, `pair_0069`) while keeping prompt and split structure unchanged.
 - `dataset/paired_edit_core_v2_cleanval`: 25 train / 4 val. This is the guarded `core_v2` retrain split that moves `pair_0050` out of the clean validation holdout.
@@ -316,6 +317,286 @@ Conclusion:
 
 - The next masked experiment is ready to run without extra local setup.
 - This is now the most interpretable way to test whether current performance is capacity-limited rather than loss-limited.
+
+### Experiment 2026-04-18E - Archive And Evaluate The Full12 Rank8 Run
+
+Hypothesis:
+If the current masked route is bottlenecked by LoRA capacity, increasing `rank` from `4` to `8` should improve the patched 4-anchor validation means relative to the current full12 masked reference.
+
+Change made:
+
+- Archived the user-provided zip into [`archive/2026-04-06_user_result_zips/nail-retouch-masked-full12-rank8-outputs-20260418T173352Z-3-001.zip`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/nail-retouch-masked-full12-rank8-outputs-20260418T173352Z-3-001.zip)
+- Extracted the run into [`outputs/masked_inpaint_colab_runs/full12_rank8_run_2026-04-18_step150/nail-retouch-masked-full12-rank8-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_rank8_run_2026-04-18_step150/nail-retouch-masked-full12-rank8-outputs)
+- Evaluated `step100 / 125 / 150` on the same patched 4-anchor validation protocol used for the current masked reference
+
+Result:
+
+- The run is complete and internally consistent:
+  - checkpoints at `25 / 50 / 75 / 100 / 125 / 150`
+  - stable enough to evaluate, but noisier than the current reference
+- Best checkpoint inside the run is `step150`
+- New `step150` summary:
+  - `masked_l1_to_target = 0.0656602`
+  - `masked_delta_e_to_target = 8.5940570`
+  - `unmasked_l1_to_input = 0.0056190`
+  - `unmasked_delta_e_to_input = 1.1351714`
+  - `border_l1_to_target = 0.0362734`
+- Current masked reference summary:
+  - `masked_l1_to_target = 0.0653309`
+  - `masked_delta_e_to_target = 8.5266851`
+  - `unmasked_l1_to_input = 0.0056065`
+  - `unmasked_delta_e_to_input = 1.1307144`
+  - `border_l1_to_target = 0.0361802`
+
+Conclusion:
+
+- `rank 8` is a clear backward move relative to the current masked reference.
+- The regression is not catastrophic, but it is directionally consistent across edit, preserve, and border metrics.
+- This adds evidence that the current bottleneck is not simply insufficient LoRA capacity at `rank 4`.
+
+### Experiment 2026-04-18F - Split Out A Tiny Shape-Refinement Side Seed
+
+Hypothesis:
+If the current masked plateau is caused in part by mixing broader contour/geometry edits into the local-boundary task family, then a tiny explicitly separate `shape_refinement` side-seed should have higher information gain than more nearby hyperparameter nudges.
+
+Change made:
+
+- Reused evaluation and dataset roles to rank next-step data/task-structure options
+- Chose an explicit taxonomy split over more conservative `v3` local-boundary expansion
+- Created a tiny `shape_refinement` side-seed scaffold with:
+  - [`dataset/annotations/masked_shape_refinement_v1_seed_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v1_seed_manifest.json)
+  - [`dataset/annotations/masked_shape_refinement_v1_seed_pack_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v1_seed_pack_manifest.json)
+  - [`dataset/annotation_packs/masked_shape_refinement_v1_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v1_seed)
+  - [`dataset/annotations/masks/masked_shape_refinement_v1_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masks/masked_shape_refinement_v1_seed)
+
+Result:
+
+- First-pass seed uses:
+  - train: `pair_0073`, `pair_0074`, `pair_0100`, `pair_0209`
+  - val: `pair_0120`
+- `pair_0208` was intentionally excluded from the first pass because it currently looks more like a high-noise / higher-risk candidate than a clean first signal for the new task bucket
+
+Conclusion:
+
+- The project now has a concrete side-route scaffold for `shape_refinement`.
+- This keeps the stable `proximal_nail_boundary_refinement` mainline clean while giving us a direct way to test whether task-mixture is the real bottleneck.
+
+### Experiment 2026-04-19A - Remove `pair_0120` From The First Shape-Refinement Pass
+
+Hypothesis:
+If `pair_0120` carries severe before/after geometric offset, keeping it in the very first `shape_refinement` pass would add pairing noise faster than it adds useful task signal.
+
+Change made:
+
+- Updated [`dataset/annotations/masked_shape_refinement_v1_seed_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v1_seed_manifest.json)
+- Updated [`dataset/annotations/masked_shape_refinement_v1_seed_pack_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v1_seed_pack_manifest.json)
+- Removed `pair_0120` from the first-pass active split
+- Promoted `pair_0073` into the first validation slot instead
+
+Result:
+
+- Current first-pass `shape_refinement` seed is now:
+  - train: `pair_0074`, `pair_0100`, `pair_0209`
+  - val: `pair_0073`
+- `pair_0120` remains an observed high-risk candidate, but it is no longer a required blocker for the first side-route pass
+
+Conclusion:
+
+- The first `shape_refinement` pass is now cleaner and less likely to be dominated by pairwise geometry noise.
+- `pair_0120` should be treated as a later hard-case candidate, not as a first-pass readout anchor.
+
+### Experiment 2026-04-19B - Run First-Pass QA On The Uploaded Shape-Refinement Seed Masks
+
+Hypothesis:
+If the first `shape_refinement` masks are semantically local and follow real contour/tip-corridor changes rather than broad hand edits, at least part of the side-seed should already be promotable or close to promotable.
+
+Change made:
+
+- Reviewed the uploaded masks under [`dataset/annotations/masks/masked_shape_refinement_v1_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masks/masked_shape_refinement_v1_seed)
+- Compared them against the context sheets in [`dataset/annotation_packs/masked_shape_refinement_v1_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v1_seed)
+- Ran first-pass Mask QA on:
+  - `pair_0073`
+  - `pair_0074`
+  - `pair_0100`
+  - `pair_0209`
+
+Result:
+
+- `pair_0073`: pass
+  - approx mask ratio `0.0461`
+- `pair_0074`: micro-adjust
+  - approx mask ratio `0.0496`
+  - needs slightly more distal sidewall/tip-transition coverage
+- `pair_0100`: micro-adjust
+  - approx mask ratio `0.0346`
+  - currently undercovers sharper distal/tip silhouette changes
+- `pair_0209`: micro-adjust
+  - approx mask ratio `0.0272`
+  - currently a little too conservative for a stiletto-shape example
+
+Conclusion:
+
+- The first shape side-seed is viable: no sample needs to be discarded or deferred.
+- But only `pair_0073` is ready for immediate promotion; the other three need one refinement pass before a clean first approved subset should be built.
+
+### Experiment 2026-04-19C - Re-Run QA After The First Shape-Refinement Micro-Adjust Pass
+
+Hypothesis:
+If the uploaded revisions on `pair_0074`, `pair_0100`, and `pair_0209` meaningfully expand the distal sidewall / tip corridor without broadening into hand-wide edits, the first `shape_refinement` seed should be ready for approved-subset promotion.
+
+Change made:
+
+- Re-reviewed the latest masks under [`dataset/annotations/masks/masked_shape_refinement_v1_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masks/masked_shape_refinement_v1_seed)
+- Compared the revised masks against the same context sheets in [`dataset/annotation_packs/masked_shape_refinement_v1_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v1_seed)
+- Focused the second-pass QA on:
+  - `pair_0074`
+  - `pair_0100`
+  - `pair_0209`
+
+Result:
+
+- `pair_0073`: still passes cleanly
+  - approx mask ratio `0.0461`
+- `pair_0074`: still needs micro-adjust
+  - approx mask ratio `0.0496`
+  - remaining issue: still slightly proximal-heavy and still wants fuller distal sidewall / tip-corridor coverage on the dominant long french nails
+- `pair_0100`: still needs micro-adjust
+  - approx mask ratio `0.0346`
+  - remaining issue: still undercovers the sharper distal silhouette / tip-transition region where the visible shape correction happens
+- `pair_0209`: still needs micro-adjust
+  - approx mask ratio `0.0272`
+  - remaining issue: still a bit too conservative for the stiletto-shape example and needs slightly more distal sidewall / tip corridor coverage
+
+Conclusion:
+
+- The first `shape_refinement` side-seed remains structurally sound, but it is not yet ready for approved-subset promotion.
+- `pair_0073` stays as the only current pass.
+- `pair_0074`, `pair_0100`, and `pair_0209` need one more targeted refinement pass; none of them need to be discarded or deferred.
+
+### Experiment 2026-04-19D - Check The Latest Single-Pair Fixes On The Shape-Refinement Seed
+
+Hypothesis:
+If the latest pair-by-pair fixes really complete the intended distal sidewall / tip corridor, the first `shape_refinement` seed can be reduced to at most one remaining blocker before promotion.
+
+Change made:
+
+- Re-checked the latest authored masks against their sheets for:
+  - `pair_0209`
+  - `pair_0100`
+  - `pair_0074`
+
+Result:
+
+- `pair_0209`: now passes
+  - the visible stiletto tip corridor is now covered cleanly without broadening into the nail interior or surrounding skin
+- `pair_0100`: now passes
+  - the dominant nails now include enough distal silhouette / tip-transition coverage to read as true `shape_refinement`
+- `pair_0074`: still needs a micro-adjust
+  - approximate mask ratio: `0.0527`
+  - remaining issue: the main visible long french nails are better than before, but the distal sidewall / tip corridor is still slightly too narrow, especially on the right-side visible nail
+
+Conclusion:
+
+- The first `shape_refinement` seed is now very close to promotable.
+- Current pass set:
+  - `pair_0073`
+  - `pair_0100`
+  - `pair_0209`
+- Only `pair_0074` remains as the last blocker before approved-subset promotion.
+
+### Experiment 2026-04-19E - Promote The First Shape-Refinement Approved Subset And Run Minimal Training Closure
+
+Hypothesis:
+If the final blocker `pair_0074` now passes, the first `shape_refinement` seed can be promoted into a small approved subset that should still build cleanly and complete the same minimal local training closure used on the main masked route.
+
+Change made:
+
+- Final QA confirmed that the first `shape_refinement` seed now fully passes:
+  - `pair_0073`
+  - `pair_0074`
+  - `pair_0100`
+  - `pair_0209`
+- Added approved manifest:
+  - [`dataset/annotations/masked_shape_refinement_v1_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v1_approved_subset_manifest.json)
+- Built the first dedicated shape dataset:
+  - [`dataset/masked_inpaint_shape_refinement_v1`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v1)
+- Ran low-cost local smoke:
+  - [`/tmp/masked_inpaint_lora_shape_refinement_v1_local_smoke`](/tmp/masked_inpaint_lora_shape_refinement_v1_local_smoke)
+- Ran short 10-step local dry-run:
+  - [`/tmp/masked_inpaint_lora_shape_refinement_v1_step10_local`](/tmp/masked_inpaint_lora_shape_refinement_v1_step10_local)
+
+Result:
+
+- Approved subset split:
+  - train:
+    - `pair_0074`
+    - `pair_0100`
+    - `pair_0209`
+  - val:
+    - `pair_0073`
+- Data-layer summary for [`dataset/masked_inpaint_shape_refinement_v1`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v1):
+  - `train_count = 3`
+  - `val_count = 1`
+  - train `mean_mask_ratio = 0.0454`
+  - val `mean_mask_ratio = 0.0470`
+  - train `mean_final_luma_delta = 0.00107`
+  - val `mean_final_luma_delta = 0.00276`
+- Local smoke completed and wrote:
+  - `metrics.jsonl`
+  - `training_config.json`
+  - `lora_checkpoints/pytorch_lora_weights_step_000004.safetensors`
+  - `previews/preview_step_000004.png`
+- Short dry-run completed and wrote:
+  - `metrics.jsonl`
+  - `training_config.json`
+  - `lora_checkpoints/pytorch_lora_weights_step_000010.safetensors`
+  - `previews/preview_step_000010.png`
+- Losses stayed finite through both local runs.
+
+Conclusion:
+
+- The first `shape_refinement` side-route has now cleared:
+  - mask QA
+  - approved-subset promotion
+  - dataset build
+  - local smoke
+  - short dry-run
+- The project now has a minimal but real trainable side-route for stronger contour edits, separate from the `proximal_nail_boundary_refinement` mainline.
+
+### Experiment 2026-04-20A - Prepare The First GPU-Side Shape-Refinement Pilot
+
+Hypothesis:
+If the first approved `shape_refinement` subset is already build-safe and trainer-safe locally, then the next highest-information move is a small GPU-side pilot that keeps the masked mainline hyperparameters fixed and only tests whether this side route learns coherent signal at all.
+
+Change made:
+
+- Added first pilot config:
+  - [`colab/masked_inpaint_shape_refinement_v1_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v1_pilot.yaml)
+- Updated the shared masked Colab notebook default:
+  - [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
+- Fixed the pilot budget at:
+  - `max_train_steps = 100`
+  - `checkpointing_steps = 25`
+  - `preview_steps = 25`
+
+Result:
+
+- The side-route now has a direct Colab handoff.
+- The intended Drive dataset path is:
+  - `/content/drive/MyDrive/masked_inpaint_shape_refinement_v1`
+- The intended Drive output path is:
+  - `/content/drive/MyDrive/nail-retouch-masked-shape-refinement-v1-pilot-outputs`
+- Core masked variables stay unchanged for interpretability:
+  - `resolution = 512`
+  - `rank = 4`
+  - `learning_rate = 1e-5`
+  - `lambda_identity = 5.0`
+  - `lambda_color = 1.0`
+
+Conclusion:
+
+- The first `shape_refinement` side-route is now ready for its first GPU-side readability run.
+- The project is back at a clean manual boundary: upload the built side-route dataset to Drive and run the pilot from a fresh Colab clone.
 
 ### Experiment 2026-03-30C - Masked Inpaint Training Entrypoint Scaffold
 

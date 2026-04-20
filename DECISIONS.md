@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-04-18
+Last updated: 2026-04-19
 
 ## 2026-03-30 - Treat Dataset Drift As The Primary Failure Mode
 
@@ -326,6 +326,128 @@ Implication:
 - Keep the current full12 masked reference recipe fixed except for `rank`.
 - Use [`colab/masked_inpaint_full12_rank8_v1.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_full12_rank8_v1.yaml) as the next Colab handoff.
 - Keep the modeling roadmap unchanged; this is an infrastructure detail, not a reason to revisit the masked task definition or loss stack.
+
+## 2026-04-18 - Do Not Promote The Rank8 Run Over The Current Masked Reference
+
+Decision:
+Keep [`full12 lambda_color=1.0 step150`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_run_2026-04-09_step150/nail-retouch-masked-full12-lambda-color-outputs/lora_checkpoints/pytorch_lora_weights_step_000150.safetensors) as the masked default. Do not promote the archived `rank8` run.
+
+Why:
+
+- The `rank8` run is worse than the current reference on every tracked patched-validation mean:
+  - `masked_l1 0.0653309 -> 0.0656602`
+  - `masked_delta_e 8.5266851 -> 8.5940570`
+  - `unmasked_l1 0.0056065 -> 0.0056190`
+  - `unmasked_delta_e 1.1307144 -> 1.1351714`
+  - `border_l1 0.0361802 -> 0.0362734`
+- The regression is moderate rather than catastrophic, but the direction is fully consistent.
+
+Implication:
+
+- Increasing LoRA capacity is not the missing lever on the current full12 masked setup.
+- The next masked experiment should not spend another round on nearby rank changes.
+
+## 2026-04-18 - Split Shape-Refinement Out As A Tiny Side Route
+
+Decision:
+After the `rank8` run came back backward, shift the next highest-information masked experiment from nearby hyperparameter tuning to task-structure isolation: create a tiny explicit `shape_refinement` side seed separate from `proximal_nail_boundary_refinement`.
+
+Why:
+
+- Recent evidence now rules out several nearby explanations:
+  - `v3 dataset-only`: flat
+  - `lambda_identity=7.5`: flat
+  - `lambda_color=1.25`: flat
+  - `rank8`: backward
+- That pattern is more consistent with a task-mixture bottleneck than with an untested nearby scalar hyperparameter.
+- The project has already documented several samples that do not fit the conservative local-boundary task cleanly, especially `pair_0073` and `pair_0120`.
+
+Implication:
+
+- Keep `proximal_nail_boundary_refinement` as the masked mainline default task.
+- Test `shape_refinement` as a tiny separate side route instead of continuing to mix broader contour edits into the mainline.
+
+## 2026-04-19 - Exclude Pair_0120 From The First Shape-Refinement Pass
+
+Decision:
+Do not use `pair_0120` as an active member of the first `shape_refinement` side-seed pass.
+
+Why:
+
+- The current user review is that `pair_0120` has severe before/after offset.
+- That makes it too likely to test pairwise alignment noise rather than the intended `shape_refinement` task itself.
+- The first side-route pass should maximize task clarity, not difficulty.
+
+Implication:
+
+- Keep `pair_0120` as a later hard-case / follow-up candidate.
+- Use `pair_0073` as the first validation anchor for the initial `shape_refinement` pass instead.
+
+## 2026-04-19 - Hold The First Shape-Refinement Promotion Until Distal Coverage Is Real
+
+Decision:
+Keep `pair_0074`, `pair_0100`, and `pair_0209` in micro-adjust status until their masks clearly cover the intended distal sidewall / tip-shape corridor, even if they are already local and visually tidy.
+
+Why:
+
+- The second QA pass showed that all three revisions remained clean and local, but they still read too conservatively for a genuine `shape_refinement` teaching signal.
+- Promoting semantically under-scoped masks would blur the distinction between the new `shape_refinement` side route and the main `proximal_nail_boundary_refinement` task.
+
+Implication:
+
+- `pair_0073` remains the only current pass in the first `shape_refinement` seed.
+- Do one more targeted refinement pass on `pair_0074`, `pair_0100`, and `pair_0209` before building an approved subset or training scaffold for this side route.
+
+## 2026-04-19 - Keep Pair_0074 As The Only Remaining Shape-Refinement Blocker
+
+Decision:
+After the latest single-pair fixes, treat `pair_0209` and `pair_0100` as passed, and keep only `pair_0074` in micro-adjust status before promotion.
+
+Why:
+
+- `pair_0209` and `pair_0100` now cover enough distal silhouette / tip-transition corridor to function as real `shape_refinement` masks.
+- `pair_0074` improved again, but the long french nails still leave the distal sidewall / tip corridor slightly too narrow, especially on the right-side visible nail.
+
+Implication:
+
+- Current promotable pass set is now `pair_0073`, `pair_0100`, and `pair_0209`.
+- Do not build the first approved `shape_refinement` subset until `pair_0074` also passes.
+
+## 2026-04-19 - Treat The First Shape-Refinement Subset As A Real Side Route
+
+Decision:
+After `pair_0074` passed final QA, promote the first four-sample `shape_refinement` seed into its own approved subset and keep it separate from the `proximal_nail_boundary_refinement` mainline.
+
+Why:
+
+- The final QA pass now clears all four first-pass samples:
+  - `pair_0073`
+  - `pair_0074`
+  - `pair_0100`
+  - `pair_0209`
+- The rebuilt dataset stayed local and color-aligned, and both the smoke run and short dry-run completed cleanly.
+- That is enough evidence to treat `shape_refinement` as a real trainable side route rather than only an annotation thought experiment.
+
+Implication:
+
+- Use [`dataset/annotations/masked_shape_refinement_v1_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v1_approved_subset_manifest.json) as the current approved manifest for the first `shape_refinement` subset.
+- Use [`dataset/masked_inpaint_shape_refinement_v1`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v1) as the current built dataset for any future smoke, short-run, or GPU-side continuation of the side route.
+
+## 2026-04-20 - Use A 100-Step Pilot For The First GPU-Side Shape-Refinement Run
+
+Decision:
+For the first GPU-side `shape_refinement` run, keep the main masked training variables fixed and use a modest `100`-step pilot budget with checkpoints and previews every `25` steps.
+
+Why:
+
+- The approved side-route dataset is currently only `3 train / 1 val`, so the first GPU run should be treated as a readability check rather than a hard optimization attempt.
+- `100` steps is enough runway to see whether the route learns a coherent shape signal, while keeping overfitting risk and Colab spend lower than a full `150`-step run.
+- Nearby variables like rank, resolution, and loss weights do not need to move yet because this pilot is about route viability, not hyperparameter exploration.
+
+Implication:
+
+- Use [`colab/masked_inpaint_shape_refinement_v1_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v1_pilot.yaml) as the first Colab handoff for the side route.
+- Keep `resolution=512`, `rank=4`, `learning_rate=1e-5`, `lambda_identity=5.0`, and `lambda_color=1.0` unchanged for the first GPU-side readout.
 
 ## 2026-04-02 - Make The Local Smoke Wrapper Auto-Prefer Cached Inpainting Weights
 

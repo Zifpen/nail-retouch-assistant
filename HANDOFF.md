@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-04-18
+Last updated: 2026-04-19
 
 ## What Was Tested
 
@@ -99,6 +99,95 @@ Last updated: 2026-04-18
 - Why `rank8` won:
   - higher information gain than another conservative dataset-only/taxonomy expansion
   - much cleaner interpretation than a simultaneous detail-regime shift like `512 -> 768`
+- The archived `rank8` run now exists under [`outputs/masked_inpaint_colab_runs/full12_rank8_run_2026-04-18_step150/nail-retouch-masked-full12-rank8-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_rank8_run_2026-04-18_step150/nail-retouch-masked-full12-rank8-outputs).
+- Best checkpoint inside that run is `step150`.
+- Comparison vs current masked reference is backward:
+  - reference `step150`: `masked_l1 0.0653309`, `masked_delta_e 8.5266851`, `unmasked_l1 0.0056065`, `unmasked_delta_e 1.1307144`, `border_l1 0.0361802`
+  - `rank8` `step150`: `masked_l1 0.0656602`, `masked_delta_e 8.5940570`, `unmasked_l1 0.0056190`, `unmasked_delta_e 1.1351714`, `border_l1 0.0362734`
+- Practical interpretation:
+  - safe enough to evaluate
+  - but consistently worse than the current masked default
+  - capacity increase did not solve the current plateau
+- The next highest-information move is now a task split, not another nearby hyperparameter nudge.
+- A tiny `shape_refinement` side-seed scaffold now exists:
+  - manifest: [`dataset/annotations/masked_shape_refinement_v1_seed_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v1_seed_manifest.json)
+  - pack manifest: [`dataset/annotations/masked_shape_refinement_v1_seed_pack_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v1_seed_pack_manifest.json)
+  - annotation pack: [`dataset/annotation_packs/masked_shape_refinement_v1_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v1_seed)
+  - final mask dir: [`dataset/annotations/masks/masked_shape_refinement_v1_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masks/masked_shape_refinement_v1_seed)
+- First-pass pair selection:
+  - train: `pair_0074`, `pair_0100`, `pair_0209`
+  - val: `pair_0073`
+- `pair_0208` is intentionally excluded from the first pass because it currently looks too noisy/high-risk for a clean first readout.
+- `pair_0120` is now also excluded from the first active pass because user review confirms severe before/after offset; keep it as a later hard-case candidate instead of a first-pass anchor.
+- First-pass QA on uploaded `shape_refinement` masks is now complete:
+  - `pair_0073`: pass
+  - `pair_0074`: micro-adjust
+  - `pair_0100`: micro-adjust
+  - `pair_0209`: micro-adjust
+- Micro-adjust guidance:
+  - `pair_0074`: extend a bit farther along the distal sidewall/tip-transition corridor on the long french nails
+  - `pair_0100`: include more of the sharper distal/tip silhouette change on the dominant visible nails
+  - `pair_0209`: add a bit more distal sidewall/tip corridor coverage for the stiletto-shape example
+- None of the four need to be discarded; this is a refinement-pass issue, not a sample-selection failure.
+- Second-pass QA on the revised `shape_refinement` masks is now also complete:
+  - `pair_0073`: still pass
+  - `pair_0074`: still micro-adjust
+  - `pair_0100`: still micro-adjust
+  - `pair_0209`: still micro-adjust
+- Practical read on the second pass:
+  - the revisions stayed clean and local
+  - none of the three need to be discarded or deferred
+  - but they are still too conservative to count as true `shape_refinement` teaching masks
+- Refined next-pass guidance:
+  - `pair_0074`: still slightly proximal-heavy; extend farther along the distal sidewall / tip corridor on the dominant long french nails
+  - `pair_0100`: still undercovers the sharper distal silhouette / tip-transition region where the visible shape correction happens
+  - `pair_0209`: still needs slightly more distal sidewall / tip corridor coverage for the stiletto-shape example
+- Latest single-pair rechecks after those fixes:
+  - `pair_0209`: pass
+  - `pair_0100`: pass
+  - `pair_0074`: still micro-adjust
+- Remaining concrete blocker on `pair_0074`:
+  - resolved in the latest pass; `pair_0074` now also passes final QA
+- Current first `shape_refinement` seed is now fully approved:
+  - train:
+    - `pair_0074`
+    - `pair_0100`
+    - `pair_0209`
+  - val:
+    - `pair_0073`
+- First approved side-route manifest now exists:
+  - [`dataset/annotations/masked_shape_refinement_v1_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v1_approved_subset_manifest.json)
+- First built side-route dataset now exists:
+  - [`dataset/masked_inpaint_shape_refinement_v1`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v1)
+  - `train_count = 3`
+  - `val_count = 1`
+  - train `mean_mask_ratio = 0.0454`
+  - val `mean_mask_ratio = 0.0470`
+- Minimal training closure for the side route is now complete:
+  - smoke:
+    - [`/tmp/masked_inpaint_lora_shape_refinement_v1_local_smoke`](/tmp/masked_inpaint_lora_shape_refinement_v1_local_smoke)
+  - short dry-run:
+    - [`/tmp/masked_inpaint_lora_shape_refinement_v1_step10_local`](/tmp/masked_inpaint_lora_shape_refinement_v1_step10_local)
+  - both runs completed and wrote metrics, config, checkpoint, and preview artifacts
+- First GPU-side Colab pilot handoff for the side route is now prepared:
+  - config:
+    - [`colab/masked_inpaint_shape_refinement_v1_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v1_pilot.yaml)
+  - notebook:
+    - [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
+  - Drive dataset path:
+    - `/content/drive/MyDrive/masked_inpaint_shape_refinement_v1`
+  - Drive output path:
+    - `/content/drive/MyDrive/nail-retouch-masked-shape-refinement-v1-pilot-outputs`
+  - pilot budget:
+    - `max_train_steps = 100`
+    - `checkpointing_steps = 25`
+    - `preview_steps = 25`
+  - unchanged training variables:
+    - `resolution = 512`
+    - `rank = 4`
+    - `learning_rate = 1e-5`
+    - `lambda_identity = 5.0`
+    - `lambda_color = 1.0`
 - The first approved masks now have a more accurate interpretation: they are local posterior-edge refinement masks, not pure dead-skin cleanup masks.
 - Four explicit masks are now approved and usable:
   - `pair_0015`
@@ -188,7 +277,7 @@ Last updated: 2026-04-18
 
 ## Next Best Experiment
 
-Run the prepared single-variable masked Colab experiment that changes only `rank` from `4` to `8` around the current full12 masked reference.
+Use the updated `shape_refinement` annotation pack for one refinement pass on `pair_0074`, `pair_0100`, and `pair_0209`, while keeping `proximal_nail_boundary_refinement` as the stable masked mainline.
 
 Hypothesis:
 Two narrow next moves are now available:
