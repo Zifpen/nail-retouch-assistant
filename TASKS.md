@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-04-19
+Last updated: 2026-04-22
 
 ## Completed
 
@@ -188,3 +188,20 @@ Last updated: 2026-04-19
 - [x] Confirm the first `shape_refinement` dataset completes a local smoke run.
 - [x] Confirm the first `shape_refinement` dataset also completes a short 10-step local dry-run.
 - [x] Prepare a first GPU-side Colab pilot handoff for the approved `shape_refinement` subset.
+- [x] Archive and evaluate the first GPU-side `shape_refinement` pilot.
+- [x] Prepare the next conservative `shape_refinement` annotation seed pack.
+- [x] Use [`dataset/annotation_packs/masked_shape_refinement_v2_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v2_seed) as the next manual annotation target for the side route.
+- [x] Run first-pass QA on the uploaded `shape_refinement_v2_seed` masks.
+- [x] Promote the passing `shape_refinement_v2_seed` subset into a merged approved manifest without waiting for the full batch.
+- [x] Build [`dataset/masked_inpaint_shape_refinement_v2`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v2) from the merged approved subset.
+- [x] Confirm that the merged `shape_refinement_v2` dataset completes a local smoke run.
+- [x] Confirm that the merged `shape_refinement_v2` dataset also completes a short 10-step local dry-run.
+- [x] Decide whether to keep repairing `pair_0120` / `pair_0043` or replace them with cleaner new shape-refinement candidates.
+- [x] Prepare a replacement top-off pack after retiring `pair_0120` / `pair_0043` from the active shape-refinement queue.
+- [x] Use [`dataset/annotation_packs/masked_shape_refinement_v3_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v3_seed) as the current manual annotation target for the shape side route.
+- [x] Run QA on the uploaded `shape_refinement_v3_seed` masks.
+- [x] Promote the passing `shape_refinement_v3_seed` subset into a new merged approved manifest.
+- [x] Build [`dataset/masked_inpaint_shape_refinement_v3`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v3) from the merged approved subset.
+- [x] Confirm that the merged `shape_refinement_v3` dataset completes a local smoke run.
+- [x] Confirm that the merged `shape_refinement_v3` dataset also completes a short 10-step local dry-run.
+- [ ] Run the next GPU-side pilot on [`dataset/masked_inpaint_shape_refinement_v3`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v3).

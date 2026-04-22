@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-04-19
+Last updated: 2026-04-22
 
 ## 2026-03-30 - Treat Dataset Drift As The Primary Failure Mode
 
@@ -448,6 +448,100 @@ Implication:
 
 - Use [`colab/masked_inpaint_shape_refinement_v1_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v1_pilot.yaml) as the first Colab handoff for the side route.
 - Keep `resolution=512`, `rank=4`, `learning_rate=1e-5`, `lambda_identity=5.0`, and `lambda_color=1.0` unchanged for the first GPU-side readout.
+
+## 2026-04-20 - Treat The First Shape-Refinement Pilot As A Data-Limited Success
+
+Decision:
+Interpret the first GPU-side `shape_refinement` pilot as a successful route-validation run whose next bottleneck is more data, not more steps.
+
+Why:
+
+- The pilot trained stably and produced a usable checkpoint ladder with no collapse.
+- `step75` reads better than `step100`, which is more consistent with tiny-set wobble than with undertraining.
+- The current subset is only `3 train / 1 val`, so additional training on the same tiny pool is less informative than adding a few more shape-focused examples.
+
+Implication:
+
+- Keep the current first pilot as proof that the side route is viable.
+- Prioritize a second `shape_refinement` annotation batch before any longer or more aggressive GPU run on this side route.
+
+## 2026-04-20 - Use A Conservative Second Shape-Refinement Seed That Still Includes One Hard Geometric Probe
+
+Decision:
+Open the next `shape_refinement` seed as a conservative 4-pair batch:
+- train: `pair_0120`, `pair_0071`, `pair_0066`
+- val: `pair_0043`
+
+Why:
+
+- The route now needs more examples, but not yet the noisiest possible batch.
+- `pair_0120` is still high-value enough that continuing to defer it would reduce the information gain of the side route.
+- `pair_0071`, `pair_0066`, and `pair_0043` add cleaner same-family contour supervision around that harder probe.
+- `pair_0208` remains noisier than needed for this second, still-conservative seed.
+
+Implication:
+
+- Use [`dataset/annotation_packs/masked_shape_refinement_v2_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v2_seed) as the next manual annotation target for the side route.
+- Keep `pair_0208` out of this batch and revisit it only after the second seed is QA-reviewed.
+
+## 2026-04-22 - Promote Passing Shape-Refinement V2 Masks Immediately Instead Of Waiting For A Perfect Batch
+
+Decision:
+When a new `shape_refinement` seed batch contains a mix of clearly passing and still-noisy masks, promote the passing subset immediately into a merged approved manifest and keep only the failing masks in the manual queue.
+
+Why:
+
+- The v2 seed produced two clean passes (`pair_0071`, `pair_0066`) and two masks that still need revision (`pair_0120`, `pair_0043`).
+- Waiting for the whole batch to become perfect would stall side-route growth even though the clean half is already trainable.
+- The merged subset rebuild and local smoke / short dry-run both completed successfully, so there is no technical reason to delay the clean promotions.
+
+Implication:
+
+- Keep [`dataset/annotations/masked_shape_refinement_v2_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v2_approved_subset_manifest.json) as the active merged side-route manifest.
+- Use [`dataset/masked_inpaint_shape_refinement_v2`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v2) as the current shape-refinement training dataset.
+- Narrow the remaining manual work to `pair_0120` and `pair_0043` instead of treating the whole v2 seed as blocked.
+
+## 2026-04-22 - Stop Spending Annotation Budget On `pair_0120` / `pair_0043`
+
+Decision:
+Retire `pair_0120` and `pair_0043` from the active shape-refinement queue and replace them with a new tiny top-off pack instead of continuing to repair them.
+
+Why:
+
+- User review now confirms that both pairs have obvious before/after offset and should not be used.
+- `pair_0120` was already the hardest geometric probe in the side route, and `pair_0043` still read more like a broad envelope than a clean corridor.
+- The side route already has a healthy merged approved subset, so additional annotation time should now favor cleaner new signal rather than trying to rescue noisy tails.
+
+Implication:
+
+- Keep the current merged approved subset unchanged:
+  - [`dataset/annotations/masked_shape_refinement_v2_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v2_approved_subset_manifest.json)
+  - [`dataset/masked_inpaint_shape_refinement_v2`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v2)
+- Use the new replacement pack as the active manual target:
+  - [`dataset/annotation_packs/masked_shape_refinement_v3_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v3_seed)
+- Current replacement split:
+  - train: `pair_0208`
+  - val: `pair_0022`
+
+## 2026-04-22 - Promote The `shape_refinement_v3` Top-Off Into The Active Side Route
+
+Decision:
+Promote the passed `shape_refinement_v3` replacement masks (`pair_0208`, `pair_0022`) into a new merged approved subset and use that merged subset as the active shape-refinement training dataset.
+
+Why:
+
+- Both replacement masks passed QA without inheriting the obvious offset problems that retired `pair_0120` and `pair_0043`.
+- The rebuilt dataset stays in the same healthy local-mask regime while expanding the side route from `5 train / 1 val` to `6 train / 2 val`.
+- The rebuilt dataset completed both a local smoke run and a short 10-step dry-run, so the promotion is not just annotation-complete but training-ready.
+
+Implication:
+
+- Replace the active merged side-route manifest with:
+  - [`dataset/annotations/masked_shape_refinement_v3_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v3_approved_subset_manifest.json)
+- Replace the active merged side-route dataset with:
+  - [`dataset/masked_inpaint_shape_refinement_v3`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v3)
+- Use the new Colab pilot handoff for the next GPU-side readout:
+  - [`colab/masked_inpaint_shape_refinement_v3_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v3_pilot.yaml)
 
 ## 2026-04-02 - Make The Local Smoke Wrapper Auto-Prefer Cached Inpainting Weights
 
