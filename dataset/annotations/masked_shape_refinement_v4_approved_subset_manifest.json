@@ -1,0 +1,52 @@
+{
+  "default_prompt": "professional manicure photo retouch, clean cuticles, clean sidewalls, refined nail shape, preserve original nail design, natural skin texture, realistic hand photo",
+  "default_task": "shape_refinement",
+  "train_ids": [
+    "pair_0074",
+    "pair_0100",
+    "pair_0209",
+    "pair_0071",
+    "pair_0066",
+    "pair_0208",
+    "pair_0028",
+    "pair_0057",
+    "pair_0106",
+    "pair_0158"
+  ],
+  "val_ids": [
+    "pair_0073",
+    "pair_0022",
+    "pair_0035"
+  ],
+  "prompts": {},
+  "tasks": {
+    "pair_0074": "shape_refinement",
+    "pair_0100": "shape_refinement",
+    "pair_0209": "shape_refinement",
+    "pair_0071": "shape_refinement",
+    "pair_0066": "shape_refinement",
+    "pair_0208": "shape_refinement",
+    "pair_0028": "shape_refinement",
+    "pair_0057": "shape_refinement",
+    "pair_0106": "shape_refinement",
+    "pair_0158": "shape_refinement",
+    "pair_0073": "shape_refinement",
+    "pair_0022": "shape_refinement",
+    "pair_0035": "shape_refinement"
+  },
+  "masks": {
+    "pair_0074": "masks/masked_shape_refinement_v1_seed/pair_0074.png",
+    "pair_0100": "masks/masked_shape_refinement_v1_seed/pair_0100.png",
+    "pair_0209": "masks/masked_shape_refinement_v1_seed/pair_0209.png",
+    "pair_0071": "masks/masked_shape_refinement_v2_seed/pair_0071.png",
+    "pair_0066": "masks/masked_shape_refinement_v2_seed/pair_0066.png",
+    "pair_0208": "masks/masked_shape_refinement_v3_seed/pair_0208.png",
+    "pair_0028": "masks/masked_shape_refinement_v4_seed/pair_0028.png",
+    "pair_0057": "masks/masked_shape_refinement_v4_seed/pair_0057.png",
+    "pair_0106": "masks/masked_shape_refinement_v4_seed/pair_0106.png",
+    "pair_0158": "masks/masked_shape_refinement_v4_seed/pair_0158.png",
+    "pair_0073": "masks/masked_shape_refinement_v1_seed/pair_0073.png",
+    "pair_0022": "masks/masked_shape_refinement_v3_seed/pair_0022.png",
+    "pair_0035": "masks/masked_shape_refinement_v4_seed/pair_0035.png"
+  }
+}

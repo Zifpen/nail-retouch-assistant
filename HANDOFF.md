@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-04-22
+Last updated: 2026-04-24
 
 ## What Was Tested
 
@@ -216,6 +216,60 @@ Last updated: 2026-04-22
   - caution:
     - `pair_0120` remains a known offset-risk sample, so annotate only the defendable shape corridor
     - `pair_0208` is still intentionally left out of this second conservative seed
+- The clean `shape_refinement_v4_seed` masks have now been reviewed and all pass QA:
+  - `pair_0028`
+  - `pair_0057`
+  - `pair_0106`
+  - `pair_0158`
+  - `pair_0035`
+- The active merged side-route manifest is now:
+  - [`dataset/annotations/masked_shape_refinement_v4_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v4_approved_subset_manifest.json)
+  - train:
+    - `pair_0074`
+    - `pair_0100`
+    - `pair_0209`
+    - `pair_0071`
+    - `pair_0066`
+    - `pair_0208`
+    - `pair_0028`
+    - `pair_0057`
+    - `pair_0106`
+    - `pair_0158`
+  - val:
+    - `pair_0073`
+    - `pair_0022`
+    - `pair_0035`
+- The current merged side-route dataset is now:
+  - [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4)
+  - `train_count = 10`
+  - `val_count = 3`
+  - train `mean_mask_ratio = 0.0475`
+  - val `mean_mask_ratio = 0.0309`
+  - train `mean_final_luma_delta = 0.000815`
+  - val `mean_final_luma_delta = 0.001626`
+- Minimal local closure on `v4` is now partially complete:
+  - smoke output:
+    - [`/tmp/masked_inpaint_lora_shape_refinement_v4_local_smoke`](/tmp/masked_inpaint_lora_shape_refinement_v4_local_smoke)
+  - completed artifacts:
+    - `metrics.jsonl`
+    - `training_config.json`
+    - `lora_checkpoints/pytorch_lora_weights_step_000004.safetensors`
+  - a local `10`-step dry-run was launched under:
+    - [`/tmp/masked_inpaint_lora_shape_refinement_v4_step10_local`](/tmp/masked_inpaint_lora_shape_refinement_v4_step10_local)
+  - but it is slow enough on this CPU that it should not block the next move
+- The next Colab handoff is now:
+  - config:
+    - [`colab/masked_inpaint_shape_refinement_v4_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v4_pilot.yaml)
+  - notebook:
+    - [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
+  - Drive dataset path:
+    - `/content/drive/MyDrive/masked_inpaint_shape_refinement_v4`
+  - Drive output path:
+    - `/content/drive/MyDrive/nail-retouch-masked-shape-refinement-v4-pilot-outputs`
+- Current real manual boundary:
+  - upload [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4) to Drive
+  - fresh clone branch `codex/masked-full12-colab`
+  - run the notebook and return the next pilot zip for archive + validation
 - First-pass QA on that v2 seed is now complete:
   - `pair_0071`: pass
   - `pair_0066`: pass
@@ -273,12 +327,37 @@ Last updated: 2026-04-22
   - short dry-run:
     - [`/tmp/masked_inpaint_lora_shape_refinement_v3_step10_local`](/tmp/masked_inpaint_lora_shape_refinement_v3_step10_local)
   - both runs completed and wrote metrics, config, checkpoint, and preview artifacts
-- The next manual boundary is now GPU-side, not annotation-side:
-  - upload [`dataset/masked_inpaint_shape_refinement_v3`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v3) to Drive as `/content/drive/MyDrive/masked_inpaint_shape_refinement_v3`
-  - run [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
-  - notebook now defaults to [`colab/masked_inpaint_shape_refinement_v3_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v3_pilot.yaml)
-  - output target:
-    - `/content/drive/MyDrive/nail-retouch-masked-shape-refinement-v3-pilot-outputs`
+- The second GPU-side `shape_refinement` pilot is now archived and reviewed:
+  - raw zip:
+    - [`archive/2026-04-06_user_result_zips/nail-retouch-masked-shape-refinement-v3-pilot-outputs-20260423T065547Z-3-001.zip`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/nail-retouch-masked-shape-refinement-v3-pilot-outputs-20260423T065547Z-3-001.zip)
+  - ingested run:
+    - [`outputs/masked_inpaint_colab_runs/shape_refinement_v3_pilot_run_2026-04-23_step100/nail-retouch-masked-shape-refinement-v3-pilot-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/shape_refinement_v3_pilot_run_2026-04-23_step100/nail-retouch-masked-shape-refinement-v3-pilot-outputs)
+  - patched local validation:
+    - [`outputs/masked_inpaint_validation/shape_refinement_v3_pilot_disable_safety`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_validation/shape_refinement_v3_pilot_disable_safety)
+- Current checkpoint readout on the patched validation split (`pair_0022`, `pair_0073`) is monotonic through the full ladder:
+  - `step25`: masked L1 `0.07557`, masked deltaE `9.3511`, border L1 `0.02765`
+  - `step50`: masked L1 `0.07546`, masked deltaE `9.3364`, border L1 `0.02763`
+  - `step75`: masked L1 `0.07537`, masked deltaE `9.3198`, border L1 `0.02762`
+  - `step100`: masked L1 `0.07526`, masked deltaE `9.2927`, border L1 `0.02761`
+- Preserve remains exact outside the mask under the patched route:
+  - mean unmasked L1 to input `0.0`
+  - mean unmasked deltaE to input `0.0`
+- The current practical read is:
+  - the side route is still valid
+  - `v3` is more stable than the first pilot
+  - current best checkpoint on this run is `step100`
+- The next manual boundary is annotation-side again, not GPU-side:
+  - annotation pack:
+    - [`dataset/annotation_packs/masked_shape_refinement_v4_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v4_seed)
+  - manifests:
+    - [`dataset/annotations/masked_shape_refinement_v4_seed_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v4_seed_manifest.json)
+    - [`dataset/annotations/masked_shape_refinement_v4_seed_pack_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v4_seed_pack_manifest.json)
+  - final mask dir:
+    - [`dataset/annotations/masks/masked_shape_refinement_v4_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masks/masked_shape_refinement_v4_seed)
+  - current split:
+    - train: `pair_0028`, `pair_0057`, `pair_0106`, `pair_0158`
+    - val: `pair_0035`
+    - reserve val (do not annotate yet): `pair_0216`
 - Four explicit masks are now approved and usable:
   - `pair_0015`
   - `pair_0018`

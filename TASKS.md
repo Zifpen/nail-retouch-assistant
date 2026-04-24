@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-04-22
+Last updated: 2026-04-24
 
 ## Completed
 
@@ -204,4 +204,19 @@ Last updated: 2026-04-22
 - [x] Build [`dataset/masked_inpaint_shape_refinement_v3`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v3) from the merged approved subset.
 - [x] Confirm that the merged `shape_refinement_v3` dataset completes a local smoke run.
 - [x] Confirm that the merged `shape_refinement_v3` dataset also completes a short 10-step local dry-run.
-- [ ] Run the next GPU-side pilot on [`dataset/masked_inpaint_shape_refinement_v3`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v3).
+- [x] Run the next GPU-side pilot on [`dataset/masked_inpaint_shape_refinement_v3`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v3).
+- [x] Archive and evaluate the second GPU-side `shape_refinement` pilot.
+- [x] Prepare the next clean `shape_refinement` annotation seed pack.
+- [x] Use [`dataset/annotation_packs/masked_shape_refinement_v4_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v4_seed) as the current manual annotation target for the shape side route.
+- [x] Run QA on the uploaded `shape_refinement_v4_seed` masks.
+- [x] Promote the passing `shape_refinement_v4_seed` subset into a new merged approved manifest.
+- [x] Build [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4) from the merged approved subset.
+- [x] Confirm that the merged `shape_refinement_v4` dataset completes a local smoke run.
+- [ ] Optionally finish the slow local `10`-step dry-run on `dataset/masked_inpaint_shape_refinement_v4` if we later want another CPU-side sanity point.
+- [ ] Run the next GPU-side pilot on [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4).
+
+## Current Manual Boundary
+
+- Upload [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4) to Drive as `masked_inpaint_shape_refinement_v4`.
+- Fresh clone branch `codex/masked-full12-colab`.
+- Run [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb), which now defaults to [`colab/masked_inpaint_shape_refinement_v4_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v4_pilot.yaml).

@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-04-22
+Last updated: 2026-04-24
 
 ## 2026-03-30 - Treat Dataset Drift As The Primary Failure Mode
 
@@ -218,6 +218,24 @@ Implication:
 
 - For local plumbing checks in this environment, prefer a cached inpainting snapshot when available.
 - Do not log remote model-resolution failures as evidence that the masked training route is broken.
+
+## 2026-04-24 - Promote The Clean V4 Shape-Refinement Seed And Move Straight To A New GPU Pilot
+
+Decision:
+Promote the full clean `v4` shape-refinement seed into the merged side-route dataset and treat the next GPU-side pilot as the new manual boundary instead of waiting for a very slow local `10`-step CPU dry-run.
+
+Why:
+
+- The new `v4` masks are narrow, shape-driven, and free of the obvious offset noise that retired `pair_0120` and `pair_0043`.
+- The rebuilt merged dataset remains statistically healthy after adding `pair_0028`, `pair_0057`, `pair_0106`, `pair_0158`, and `pair_0035`.
+- A local `4`-step smoke already confirms that the new manifest and dataset launch cleanly.
+- On this machine, the local `10`-step run is too slow to be the highest-value gate compared with just reading the next Colab pilot.
+
+Implication:
+
+- Use [`dataset/annotations/masked_shape_refinement_v4_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v4_approved_subset_manifest.json) as the active merged manifest.
+- Use [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4) as the active shape-refinement dataset.
+- Use [`colab/masked_inpaint_shape_refinement_v4_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v4_pilot.yaml) as the next Colab handoff.
 
 ## 2026-04-17 - Keep The Full12 Lambda-Color Reference As The Masked Default After V3 Dataset-Only
 
@@ -542,6 +560,29 @@ Implication:
   - [`dataset/masked_inpaint_shape_refinement_v3`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v3)
 - Use the new Colab pilot handoff for the next GPU-side readout:
   - [`colab/masked_inpaint_shape_refinement_v3_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v3_pilot.yaml)
+
+## 2026-04-23 - Treat The Second Shape-Refinement Pilot As A More Stable Success And Expand Again
+
+Decision:
+Treat the second GPU-side `shape_refinement` pilot as a stronger validation of the route than the first one, keep `step100` as the current best checkpoint on that run, and expand the annotation pool again instead of switching back to hyperparameter tweaks.
+
+Why:
+
+- Under patched local validation with `--disable-safety-checker`, the `25 / 50 / 75 / 100` ladder improves monotonically instead of wobbling late.
+- The larger `6 train / 2 val` subset appears to have reduced the tiny-set instability seen in the first `3 train / 1 val` pilot.
+- The route is now stable enough that another clean annotation batch is likely to yield more information than another nearby loss or optimizer change.
+
+Implication:
+
+- Keep the archived v3 pilot as the current GPU-side proof point:
+  - [`outputs/masked_inpaint_colab_runs/shape_refinement_v3_pilot_run_2026-04-23_step100/nail-retouch-masked-shape-refinement-v3-pilot-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/shape_refinement_v3_pilot_run_2026-04-23_step100/nail-retouch-masked-shape-refinement-v3-pilot-outputs)
+- Treat `step100` as the current best checkpoint of that run.
+- Open a new annotation batch instead of another training-only experiment:
+  - [`dataset/annotation_packs/masked_shape_refinement_v4_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_shape_refinement_v4_seed)
+- Use this split for the new seed:
+  - train: `pair_0028`, `pair_0057`, `pair_0106`, `pair_0158`
+  - val: `pair_0035`
+  - reserve val: `pair_0216`
 
 ## 2026-04-02 - Make The Local Smoke Wrapper Auto-Prefer Cached Inpainting Weights
 
