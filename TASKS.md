@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-04-24
+Last updated: 2026-04-25
 
 ## Completed
 
@@ -213,10 +213,13 @@ Last updated: 2026-04-24
 - [x] Build [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4) from the merged approved subset.
 - [x] Confirm that the merged `shape_refinement_v4` dataset completes a local smoke run.
 - [ ] Optionally finish the slow local `10`-step dry-run on `dataset/masked_inpaint_shape_refinement_v4` if we later want another CPU-side sanity point.
-- [ ] Run the next GPU-side pilot on [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4).
+- [x] Run the next GPU-side pilot on [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4).
+- [x] Archive and evaluate the `shape_refinement_v4` GPU pilot.
+- [x] Prepare a budget-only `shape_refinement_v4` Colab handoff that extends the same dataset/settings to `200` steps.
+- [ ] Run the `shape_refinement_v4` budget-200 Colab handoff.
 
 ## Current Manual Boundary
 
-- Upload [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4) to Drive as `masked_inpaint_shape_refinement_v4`.
+- Keep [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4) on Drive as `masked_inpaint_shape_refinement_v4`.
 - Fresh clone branch `codex/masked-full12-colab`.
-- Run [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb), which now defaults to [`colab/masked_inpaint_shape_refinement_v4_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v4_pilot.yaml).
+- Run [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb), which now defaults to [`colab/masked_inpaint_shape_refinement_v4_budget200.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v4_budget200.yaml).

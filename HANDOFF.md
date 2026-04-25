@@ -1,6 +1,31 @@
 # Handoff
 
-Last updated: 2026-04-24
+Last updated: 2026-04-25
+
+## Current Manual Boundary
+
+- The completed `shape_refinement_v4` pilot has been archived and locally validated.
+- Best checkpoint in that pilot is `step100`, with the validation ladder still improving through `100` steps.
+- The next run should be a budget-only continuation on the same dataset and settings:
+  - config: [`colab/masked_inpaint_shape_refinement_v4_budget200.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v4_budget200.yaml)
+  - notebook: [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
+  - Drive dataset path: `/content/drive/MyDrive/masked_inpaint_shape_refinement_v4`
+  - Drive output path: `/content/drive/MyDrive/nail-retouch-masked-shape-refinement-v4-budget200-outputs`
+- After the run returns, compare `step125 / 150 / 175 / 200` against the archived `step100` pilot under the same patched local validation.
+
+## Latest Result
+
+- Archived raw zip:
+  - [`archive/2026-04-06_user_result_zips/nail-retouch-masked-shape-refinement-v4-pilot-outputs-20260424T184214Z-3-001.zip`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/nail-retouch-masked-shape-refinement-v4-pilot-outputs-20260424T184214Z-3-001.zip)
+- Ingested run:
+  - [`outputs/masked_inpaint_colab_runs/shape_refinement_v4_pilot_run_2026-04-24_step100/nail-retouch-masked-shape-refinement-v4-pilot-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/shape_refinement_v4_pilot_run_2026-04-24_step100/nail-retouch-masked-shape-refinement-v4-pilot-outputs)
+- Patched validation:
+  - [`outputs/masked_inpaint_validation/shape_refinement_v4_pilot_disable_safety`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_validation/shape_refinement_v4_pilot_disable_safety)
+- Mean validation ladder:
+  - `step25`: `masked_l1=0.0835376`, `masked_delta_e=10.5590`, `border_l1=0.0342732`
+  - `step50`: `masked_l1=0.0833610`, `masked_delta_e=10.5213`, `border_l1=0.0342454`
+  - `step75`: `masked_l1=0.0832100`, `masked_delta_e=10.4849`, `border_l1=0.0342205`
+  - `step100`: `masked_l1=0.0831042`, `masked_delta_e=10.4483`, `border_l1=0.0342123`
 
 ## What Was Tested
 

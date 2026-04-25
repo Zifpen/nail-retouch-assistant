@@ -155,11 +155,11 @@ dataset/annotations/masks/masked_cuticle_cleanup_v1/
 
 Use the generated `bootstrap_masks/` only as rough drafts. Final approved binary masks should be saved under `dataset/annotations/masks/masked_cuticle_cleanup_v1/`.
 
-Current shape-refinement pilot handoff:
+Current shape-refinement handoff:
 
 - merged manifest: `dataset/annotations/masked_shape_refinement_v4_approved_subset_manifest.json`
 - built dataset: `dataset/masked_inpaint_shape_refinement_v4`
-- Colab config: `colab/masked_inpaint_shape_refinement_v4_pilot.yaml`
+- Colab config: `colab/masked_inpaint_shape_refinement_v4_budget200.yaml`
 - notebook entrypoint: `colab/train_masked_inpaint_full12_v1.ipynb`
 
 ## Masked Inpaint Training

@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-04-24
+Last updated: 2026-04-25
 
 ## Current Dataset Status
 
@@ -43,7 +43,7 @@ Current shape-refinement side-route:
 - Active merged manifest: [`dataset/annotations/masked_shape_refinement_v4_approved_subset_manifest.json`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotations/masked_shape_refinement_v4_approved_subset_manifest.json)
 - Active merged dataset: [`dataset/masked_inpaint_shape_refinement_v4`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/masked_inpaint_shape_refinement_v4)
 - Local smoke: [`/tmp/masked_inpaint_lora_shape_refinement_v4_local_smoke`](/tmp/masked_inpaint_lora_shape_refinement_v4_local_smoke)
-- Next GPU handoff config: [`colab/masked_inpaint_shape_refinement_v4_pilot.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v4_pilot.yaml)
+- Next GPU handoff config: [`colab/masked_inpaint_shape_refinement_v4_budget200.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v4_budget200.yaml)
 
 Latest guarded route in [`colab/paired_edit_core_v1_config.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/paired_edit_core_v1_config.yaml):
 
@@ -3297,3 +3297,58 @@ Conclusion:
 
 - The current passed v3 subset is now ready for a more informative GPU-side dataset-only continuation without waiting for the full v3 tail to resolve.
 - The project is at a clean manual boundary again: either run the v3 partial-subset Colab handoff, or continue manual mask work on the deferred high-risk samples.
+
+### Experiment 2026-04-25A - Archive And Evaluate The Shape-Refinement V4 Pilot
+
+Hypothesis:
+If the expanded `shape_refinement_v4` subset is healthier than the earlier side-route pilots, then the `25/50/75/100` checkpoint ladder should remain stable and keep improving on patched local validation.
+
+Change made:
+
+- Archived the user-provided Colab zip:
+  - [`archive/2026-04-06_user_result_zips/nail-retouch-masked-shape-refinement-v4-pilot-outputs-20260424T184214Z-3-001.zip`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/archive/2026-04-06_user_result_zips/nail-retouch-masked-shape-refinement-v4-pilot-outputs-20260424T184214Z-3-001.zip)
+- Ingested the run:
+  - [`outputs/masked_inpaint_colab_runs/shape_refinement_v4_pilot_run_2026-04-24_step100/nail-retouch-masked-shape-refinement-v4-pilot-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/shape_refinement_v4_pilot_run_2026-04-24_step100/nail-retouch-masked-shape-refinement-v4-pilot-outputs)
+- Ran patched local validation with safety checker disabled on the `shape_refinement_v4` val split:
+  - [`outputs/masked_inpaint_validation/shape_refinement_v4_pilot_disable_safety`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_validation/shape_refinement_v4_pilot_disable_safety)
+
+Result:
+
+- The validation ladder is monotonic:
+  - `step25`: `masked_l1=0.0835376`, `masked_delta_e=10.5590`, `border_l1=0.0342732`
+  - `step50`: `masked_l1=0.0833610`, `masked_delta_e=10.5213`, `border_l1=0.0342454`
+  - `step75`: `masked_l1=0.0832100`, `masked_delta_e=10.4849`, `border_l1=0.0342205`
+  - `step100`: `masked_l1=0.0831042`, `masked_delta_e=10.4483`, `border_l1=0.0342123`
+- Exact outside-mask preservation remains at `0.0` under the validation composite protocol.
+- Visual sheets show stable preservation, but the generated shape changes are still conservative.
+- On the common `pair_0022 / pair_0073` validation anchors, v4 does not clearly beat the previous v3 pilot yet; the extra `pair_0035` val sample is also harder.
+
+Conclusion:
+
+- `shape_refinement_v4` is trainable and stable, but the current `100`-step pilot is probably under-budgeted for visible shape edits.
+- The next highest-information move is a budget-only `v4` continuation to `200` steps, not another immediate mask batch or loss/rank change.
+
+### Experiment 2026-04-25B - Prepare Shape-Refinement V4 Budget-200 Handoff
+
+Hypothesis:
+If the `shape_refinement_v4` ladder is still improving at `step100`, extending the same dataset and training settings to `200` steps should reveal whether the side-route is under-trained or whether it plateaus while still too conservative.
+
+Change made:
+
+- Added a dedicated budget-only Colab config:
+  - [`colab/masked_inpaint_shape_refinement_v4_budget200.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v4_budget200.yaml)
+- Updated the existing notebook default to read that config:
+  - [`colab/train_masked_inpaint_full12_v1.ipynb`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/train_masked_inpaint_full12_v1.ipynb)
+
+Result:
+
+- Dataset, manifest, prompt behavior, rank, losses, resolution, and learning rate remain unchanged.
+- The only substantive training-budget change is:
+  - `max_train_steps: 100 -> 200`
+  - checkpoint/previews remain every `25` steps
+- Output path for the next run:
+  - `/content/drive/MyDrive/nail-retouch-masked-shape-refinement-v4-budget200-outputs`
+
+Conclusion:
+
+- The project is back at a clean manual boundary: run the `shape_refinement_v4` budget-200 Colab handoff, then compare `125/150/175/200` against the current `step100` pilot.

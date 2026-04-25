@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-04-24
+Last updated: 2026-04-25
 
 ## 2026-03-30 - Treat Dataset Drift As The Primary Failure Mode
 
@@ -1190,3 +1190,21 @@ Implication:
 - Keep the next manual annotation batch under the same task label: `proximal_nail_boundary_refinement`.
 - Use the new conservative seed artifacts under [`dataset/annotation_packs/masked_cuticle_cleanup_v3_seed`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/dataset/annotation_packs/masked_cuticle_cleanup_v3_seed) as the next annotation target.
 - Treat the bootstrap overlays as draft guidance only, and require manual narrowing before promotion.
+
+## 2026-04-25 - Extend Shape-Refinement V4 Before Opening Another Mask Batch
+
+Decision:
+Run one budget-only `shape_refinement_v4` continuation to `200` steps before asking for another manual shape-refinement annotation batch.
+
+Why:
+
+- The `shape_refinement_v4` pilot validated cleanly and improved monotonically from `step25` through `step100`.
+- Visual sheets still show conservative shape changes, so the current read is more likely under-budgeted than overfit.
+- The previous `v4` expansion made the side-route dataset larger and healthier, but it has not yet produced a stronger common-val checkpoint than the v3 pilot.
+- A budget-only continuation keeps the next experiment narrow: same dataset, same masks, same loss stack, same rank, same resolution.
+
+Implication:
+
+- Use [`colab/masked_inpaint_shape_refinement_v4_budget200.yaml`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/colab/masked_inpaint_shape_refinement_v4_budget200.yaml) as the next Colab handoff.
+- Treat the next result as a direct answer to whether `shape_refinement_v4` needs more steps before more mask expansion.
+- Do not change losses, LoRA rank, resolution, or dataset membership in that run.

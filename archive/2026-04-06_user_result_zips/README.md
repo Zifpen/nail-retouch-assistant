@@ -40,3 +40,27 @@ Archived files:
   - SHA256: `2ad1d0e2b998b7a2c52a13f6b5e7bc638da6882952acf08ba61c172b440c186d`
   - Ingested run:
     - [`outputs/masked_inpaint_colab_runs/v3_dataset_only_run_2026-04-16_step150/nail-retouch-masked-cuticle-cleanup-v3-dataset-only-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/v3_dataset_only_run_2026-04-16_step150/nail-retouch-masked-cuticle-cleanup-v3-dataset-only-outputs)
+- `nail-retouch-masked-full12-lambda-identity-7p5-outputs-20260418T025639Z-3-001.zip`
+  - SHA256: `63839bcf1dec56f00c8c017dcf4796cf658d970ee1f908a1a01ea217a9a901cf`
+  - Ingested run:
+    - [`outputs/masked_inpaint_colab_runs/full12_lambda_identity_7p5_run_2026-04-17_step150/nail-retouch-masked-full12-lambda-identity-7p5-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_identity_7p5_run_2026-04-17_step150/nail-retouch-masked-full12-lambda-identity-7p5-outputs)
+- `nail-retouch-masked-full12-lambda-color-1p25-outputs-20260418T053057Z-3-001.zip`
+  - SHA256: `faed51bfc6a8b23472dc67df55bd0104a89b6779477f48d57ea6df08a5ff9b7f`
+  - Ingested run:
+    - [`outputs/masked_inpaint_colab_runs/full12_lambda_color_1p25_run_2026-04-17_step150/nail-retouch-masked-full12-lambda-color-1p25-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_lambda_color_1p25_run_2026-04-17_step150/nail-retouch-masked-full12-lambda-color-1p25-outputs)
+- `nail-retouch-masked-full12-rank8-outputs-20260418T173352Z-3-001.zip`
+  - SHA256: `602b4a30c98df02c65231b8dcaf753085664b6b14ed442c4a0317cfaa5d8ffab`
+  - Ingested run:
+    - [`outputs/masked_inpaint_colab_runs/full12_rank8_run_2026-04-18_step150/nail-retouch-masked-full12-rank8-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/full12_rank8_run_2026-04-18_step150/nail-retouch-masked-full12-rank8-outputs)
+- `nail-retouch-masked-shape-refinement-v1-pilot-outputs-20260420T054508Z-3-001.zip`
+  - SHA256: `dbcdad177b50894081bf24e8b33151ce2ff54b1ce8c98875452e57771823c88c`
+  - Ingested run:
+    - [`outputs/masked_inpaint_colab_runs/shape_refinement_v1_pilot_run_2026-04-20_step100/nail-retouch-masked-shape-refinement-v1-pilot-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/shape_refinement_v1_pilot_run_2026-04-20_step100/nail-retouch-masked-shape-refinement-v1-pilot-outputs)
+- `nail-retouch-masked-shape-refinement-v3-pilot-outputs-20260423T065547Z-3-001.zip`
+  - SHA256: `b8f8244ac209a5b73bb31174e08a8fbfff04bb4e9ed899e36ca15f75633cc1d4`
+  - Ingested run:
+    - [`outputs/masked_inpaint_colab_runs/shape_refinement_v3_pilot_run_2026-04-23_step100/nail-retouch-masked-shape-refinement-v3-pilot-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/shape_refinement_v3_pilot_run_2026-04-23_step100/nail-retouch-masked-shape-refinement-v3-pilot-outputs)
+- `nail-retouch-masked-shape-refinement-v4-pilot-outputs-20260424T184214Z-3-001.zip`
+  - SHA256: `b16b3c258a8c7d293d11f478da9b756055c63dadbdab90d5d11876ff7da74419`
+  - Ingested run:
+    - [`outputs/masked_inpaint_colab_runs/shape_refinement_v4_pilot_run_2026-04-24_step100/nail-retouch-masked-shape-refinement-v4-pilot-outputs`](/Volumes/DevSSD/AI-projects/nail-retouch-assistant/outputs/masked_inpaint_colab_runs/shape_refinement_v4_pilot_run_2026-04-24_step100/nail-retouch-masked-shape-refinement-v4-pilot-outputs)
